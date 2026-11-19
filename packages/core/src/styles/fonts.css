@@ -1,0 +1,8 @@
+/* Bengali has no glyphs in the Latin system stack, so the browser falls back to its per-script
+   default (Vrinda on Windows), which renders loosely. Name each platform's own Bengali UI font
+   instead; nothing is downloaded. Relies on activateLocale setting <html lang>. */
+:lang(bn) {
+	font-family:
+		"Nirmala UI", "Noto Sans Bengali", "Kohinoor Bangla", "Bangla Sangam MN", ui-sans-serif,
+		system-ui, sans-serif;
+}

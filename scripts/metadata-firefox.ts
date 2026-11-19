@@ -47,6 +47,7 @@ const AMO_LOCALE: Record<string, string> = {
 	fr: "fr",
 	it: "it",
 	ko: "ko",
+	bn: "bn",
 	"pt-BR": "pt-BR",
 };
 // store filename -> AMO listing field.

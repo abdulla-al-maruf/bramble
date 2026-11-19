@@ -9,6 +9,7 @@ export const locales = {
 	"pt-BR": "Português (Brasil)",
 	it: "Italiano",
 	ko: "한국어",
+	bn: "বাংলা",
 } as const;
 
 export type Locale = keyof typeof locales;
@@ -22,6 +23,8 @@ export async function activateLocale(locale: Locale): Promise<void> {
 	// The .ts extension is required so Vite can statically split per-locale chunks.
 	const { messages } = await import(`./locales/${locale}/messages.ts`);
 	i18n.loadAndActivate({ locale, messages });
+	// Screen readers and :lang() font rules (fonts.css) read the page language from here.
+	if (typeof document !== "undefined") document.documentElement.lang = locale;
 }
 
 /**

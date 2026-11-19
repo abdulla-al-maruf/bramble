@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="af_unlock_title">ভল্ট আনলক করতে আপনার মাস্টার পাসওয়ার্ড দিন</string>
+    <string name="af_unlock_biometrics">বায়োমেট্রিক্স দিয়ে আনলক করুন</string>
+    <string name="af_master_password">মাস্টার পাসওয়ার্ড</string>
+    <string name="af_unlock_vault">ভল্ট আনলক করুন</string>
+    <string name="af_biometric_prompt_title">Bramble আনলক করুন</string>
+    <string name="af_err_enter_password">আপনার মাস্টার পাসওয়ার্ড দিন।</string>
+    <string name="af_err_biometrics_changed">বায়োমেট্রিক্স বদলে গেছে। মাস্টার পাসওয়ার্ড ব্যবহার করুন।</string>
+    <string name="af_err_no_password">এই ভল্টে কোনো মাস্টার পাসওয়ার্ড নেই।</string>
+    <string name="af_err_incorrect_password">ভুল মাস্টার পাসওয়ার্ড</string>
+    <string name="af_err_unlock_failed">আনলক করা যায়নি</string>
+    <string name="af_err_load_logins">লগইন লোড করা যায়নি।</string>
+    <string name="af_cancel">বাতিল</string>
+    <string name="af_search_logins">লগইন খুঁজুন</string>
+    <string name="af_empty_no_logins">এখনো কোনো লগইন সেভ করা নেই।\nBramble-এ একটি যোগ করুন।</string>
+    <string name="af_empty_no_match">“%s”-এর সাথে মেলে এমন কোনো লগইন নেই।</string>
+    <string name="af_section_for">%s-এর জন্য</string>
+    <string name="af_section_matches">মিলে যাওয়া লগইন</string>
+    <string name="af_section_no_matches">%s-এর জন্য কোনো মিল পাওয়া যায়নি</string>
+    <string name="af_section_other_logins">অন্যান্য লগইন</string>
+    <string name="af_section_logins_count">লগইন (%d)</string>
+    <string name="af_no_name">(নাম নেই)</string>
+    <string name="af_use_password">পাসওয়ার্ড ব্যবহার করুন</string>
+    <string name="af_err_biometric_prepare">বায়োমেট্রিক আনলক চালু করা যায়নি</string>
+    <string name="af_err_biometric_crypto">বায়োমেট্রিক এনক্রিপশনে সমস্যা হয়েছে</string>
+    <string name="af_ds_unlock">অটোফিল করতে আনলক করুন</string>
+    <string name="af_ds_show_all_logins">সব লগইন দেখুন</string>
+    <string name="af_ds_search_vault">আপনার ভল্টে খুঁজুন</string>
+    <string name="af_ds_show_all">সব দেখুন</string>
+    <string name="af_assoc_title">Bramble-এ সেভ করবেন?</string>
+    <string name="af_assoc_message_app">%1$s অ্যাপটি “%2$s”-এ যোগ করবেন, যাতে Bramble এখানে এটি নিজে থেকেই দেখায়?</string>
+    <string name="af_assoc_message_web">%1$s-কে “%2$s”-এ যোগ করবেন, যাতে Bramble এখানে এটি নিজে থেকেই দেখায়?</string>
+    <string name="af_assoc_save">অটোফিল করে সেভ করুন</string>
+    <string name="af_assoc_just">শুধু অটোফিল করুন</string>
+    <string name="af_new_login">নতুন লগইন</string>
+    <string name="af_new_name">নাম</string>
+    <string name="af_new_username">ইউজারনেম বা ইমেইল</string>
+    <string name="af_new_password">পাসওয়ার্ড</string>
+    <string name="af_new_generate">নতুন তৈরি করুন</string>
+    <string name="af_new_save">সেভ করে অটোফিল করুন</string>
+    <string name="af_err_new_password">একটি পাসওয়ার্ড দিন।</string>
+    <string name="af_err_new_save">এই লগইনটি সেভ করা যায়নি।</string>
+    <string name="transfer_channel_name">আপলোড</string>
+    <string name="transfer_notification_title">আপলোড শেষ হচ্ছে</string>
+    <string name="transfer_notification_text">কাজ শেষ না হওয়া পর্যন্ত Bramble ব্যাকগ্রাউন্ডে চলতে থাকবে।</string>
+</resources>

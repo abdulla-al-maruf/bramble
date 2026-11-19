@@ -26,6 +26,7 @@ const EN: &str = include_str!("../locales/en.json");
 
 /// Every locale we ship, keyed by the same codes as `packages/core/src/i18n.ts`.
 const CATALOGS: &[(&str, &str)] = &[
+    ("bn", include_str!("../locales/bn.json")),
     ("de", include_str!("../locales/de.json")),
     ("es", include_str!("../locales/es.json")),
     ("fr", include_str!("../locales/fr.json")),

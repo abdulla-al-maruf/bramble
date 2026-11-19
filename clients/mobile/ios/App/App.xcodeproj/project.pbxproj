@@ -272,6 +272,7 @@
 				"pt-BR",
 				it,
 				ko,
+				bn,
 			);
 			mainGroup = 504EC2FB1FED79650016851F;
 			packageReferences = (

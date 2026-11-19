@@ -1,6 +1,12 @@
 /** @vitest-environment happy-dom */
 import { afterEach, describe, expect, it } from "vitest";
-import { chosenLanguage, localeFor, resolveLocale, setChosenLanguage } from "./i18n";
+import {
+	activateLocale,
+	chosenLanguage,
+	localeFor,
+	resolveLocale,
+	setChosenLanguage,
+} from "./i18n";
 
 // #163: a UI language chosen in Settings, independent of the device's.
 
@@ -29,5 +35,14 @@ describe("the chosen language", () => {
 		localStorage.setItem("bramble-language", "xx");
 		expect(chosenLanguage()).toBeNull();
 		expect(localeFor("es-419")).toBe(resolveLocale("es-419"));
+	});
+});
+
+describe("the page language", () => {
+	it("follows the active catalog, so :lang() font rules and screen readers see it", async () => {
+		await activateLocale("bn");
+		expect(document.documentElement.lang).toBe("bn");
+		await activateLocale("de");
+		expect(document.documentElement.lang).toBe("de");
 	});
 });
