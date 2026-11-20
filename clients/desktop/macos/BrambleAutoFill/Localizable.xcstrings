@@ -45,6 +45,12 @@
             "state": "translated",
             "value": "모든 항목"
           }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সকল আইটেম"
+          }
         }
       }
     },
@@ -91,6 +97,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bramble에 이 사이트용 패스키가 없습니다."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bramble-এ এই সাইটের জন্য কোনো পাসকি নেই।"
           }
         }
       }
@@ -139,6 +151,12 @@
             "state": "translated",
             "value": "취소"
           }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "বাতিল করুন"
+          }
         }
       }
     },
@@ -186,6 +204,12 @@
             "state": "translated",
             "value": "패스키 선택"
           }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "একটি পাসকি নির্বাচন করুন"
+          }
         }
       }
     },
@@ -227,6 +251,12 @@
             "state": "translated",
             "value": "검색 지우기"
           }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "অনুসন্ধান সাফ করুন"
+          }
         }
       }
     },
@@ -267,6 +297,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "마스터 비밀번호 입력"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আপনার মাস্টার পাসওয়ার্ড লিখুন"
           }
         }
       }
@@ -315,6 +351,12 @@
             "state": "translated",
             "value": "%@용"
           }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@-এর জন্য"
+          }
         }
       }
     },
@@ -355,6 +397,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "비밀번호 숨기기"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "পাসওয়ার্ড লুকান"
           }
         }
       }
@@ -403,6 +451,12 @@
             "state": "translated",
             "value": "마스터 비밀번호가 올바르지 않습니다."
           }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "মাস্টার পাসওয়ার্ড সঠিক নয়"
+          }
         }
       }
     },
@@ -449,6 +503,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "항목(%lld개)"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আইটেম (%lld)"
           }
         }
       }
@@ -497,6 +557,12 @@
             "state": "translated",
             "value": "마스터 비밀번호"
           }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "মাস্টার পাসওয়ার্ড"
+          }
         }
       }
     },
@@ -544,6 +610,12 @@
             "state": "translated",
             "value": "일치 항목"
           }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "মিলসমূহ"
+          }
         }
       }
     },
@@ -585,6 +657,12 @@
             "state": "translated",
             "value": "%@에 일치하는 로그인 정보가 없습니다."
           }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@-এর সাথে মিলে যাওয়া কোনো লগইন নেই"
+          }
         }
       }
     },
@@ -625,6 +703,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "저장된 로그인이 아직 없습니다. Bramble에서 추가하세요."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "এখনও কোনো লগইন সংরক্ষণ করা হয়নি। Bramble-এ একটি যোগ করুন।"
           }
         }
       }
@@ -673,6 +757,12 @@
             "state": "translated",
             "value": "%@에 대한 일치 항목이 없습니다."
           }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@-এর জন্য কোনো মিল নেই"
+          }
         }
       }
     },
@@ -719,6 +809,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "패스키를 찾을 수 없습니다."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "কোনো পাসকি পাওয়া যায়নি"
           }
         }
       }
@@ -767,6 +863,12 @@
             "state": "translated",
             "value": "확인"
           }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ঠিক আছে"
+          }
         }
       }
     },
@@ -807,6 +909,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "먼저 Bramble을 여세요."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "প্রথমে Bramble খুলুন"
           }
         }
       }
@@ -849,6 +957,12 @@
             "state": "translated",
             "value": "결과(%lld개)"
           }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ফলাফল (%lld)"
+          }
         }
       }
     },
@@ -889,6 +1003,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "로그인 정보 검색"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "লগইন অনুসন্ধান করুন"
           }
         }
       }
@@ -937,6 +1057,12 @@
             "state": "translated",
             "value": "모든 항목 표시(%lld개 더)"
           }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সকল আইটেম দেখান (আরও %lld)"
+          }
         }
       }
     },
@@ -977,6 +1103,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "비밀번호 보기"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "পাসওয়ার্ড দেখান"
           }
         }
       }
@@ -1019,6 +1151,12 @@
             "state": "translated",
             "value": "이 보관함에는 마스터 비밀번호가 없습니다. Touch ID를 사용하세요."
           }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "এই ভল্টে কোনো মাস্টার পাসওয়ার্ড নেই। Touch ID ব্যবহার করুন।"
+          }
         }
       }
     },
@@ -1059,6 +1197,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "이 보관함에는 Touch ID가 설정되어 있지 않습니다. 마스터 비밀번호를 사용하세요."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "এই ভল্টের জন্য Touch ID সেট আপ করা হয়নি। আপনার মাস্টার পাসওয়ার্ড ব্যবহার করুন।"
           }
         }
       }
@@ -1101,6 +1245,12 @@
             "state": "translated",
             "value": "Touch ID를 다시 시도하세요."
           }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আবার Touch ID চেষ্টা করুন"
+          }
         }
       }
     },
@@ -1141,6 +1291,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "잠금 해제"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আনলক করুন"
           }
         }
       }
@@ -1183,6 +1339,12 @@
             "state": "translated",
             "value": "Bramble Desktop을 한 번 잠금 해제하면 AutoFill이 보관함을 사용할 수 있습니다."
           }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "একবার Bramble Desktop আনলক করুন, যাতে AutoFill-এ আপনার ভল্ট থাকে।"
+          }
         }
       }
     },
@@ -1223,6 +1385,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Touch ID로 잠금 해제"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch ID দিয়ে আনলক করুন"
           }
         }
       }
@@ -1265,6 +1433,12 @@
             "state": "translated",
             "value": "Touch ID 사용"
           }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch ID ব্যবহার করুন"
+          }
         }
       }
     },
@@ -1306,6 +1480,12 @@
             "state": "translated",
             "value": "마스터 비밀번호 사용"
           }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "মাস্টার পাসওয়ার্ড ব্যবহার করুন"
+          }
         }
       }
     },
@@ -1346,6 +1526,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bramble 잠금 해제"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bramble আনলক করুন"
           }
         }
       }

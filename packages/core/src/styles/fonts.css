@@ -1,7 +1,9 @@
 /* Bengali has no glyphs in the Latin system stack, so the browser falls back to its per-script
    default (Vrinda on Windows), which renders loosely. Name each platform's own Bengali UI font
-   instead; nothing is downloaded. Relies on activateLocale setting <html lang>. */
-:lang(bn) {
+   instead; nothing is downloaded. Relies on activateLocale setting <html lang>. Only <html> and
+   <body> (Chrome gives an extension page's body a font of its own): this file is outside
+   Tailwind's layers, so a rule on every element would beat font-mono. */
+:is(html, body):lang(bn) {
 	font-family:
 		"Nirmala UI", "Noto Sans Bengali", "Kohinoor Bangla", "Bangla Sangam MN", ui-sans-serif,
 		system-ui, sans-serif;

@@ -190,6 +190,12 @@
             "state": "translated",
             "value": "여기에 저장할 수 없음"
           }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "এখানে সংরক্ষণ করা যাবে না"
+          }
         }
       }
     },
@@ -1833,6 +1839,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "이 키는 Bramble을 잠금 해제하므로 Bramble에 보관할 수 없습니다. 대신 비밀번호를 선택하십시오."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "এই কী Bramble আনলক করে, তাই এটি Bramble-এ রাখা যাবে না। পরিবর্তে Passwords বেছে নিন।"
           }
         }
       }
