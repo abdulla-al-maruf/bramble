@@ -37,7 +37,9 @@ export interface BreachStatus {
 	checkedAt: number;
 }
 
-export type EntryType = "login" | "card" | "note" | "ssh-key";
+export type EntryType = "login" | "card" | "note" | "ssh-key" | "unlock-key";
+/** The kinds a person ever sees; `unlock-key` is never listed, opened or offered. */
+export type VisibleEntryType = Exclude<EntryType, "unlock-key">;
 
 /** A user-defined extra field, available on every entry type. */
 export interface CustomField {
@@ -169,7 +171,22 @@ export interface SshKeyEntryData extends BaseEntryData {
 	keyType?: string;
 }
 
-export type EntryData = LoginEntryData | CardEntryData | NoteEntryData | SshKeyEntryData;
+/**
+ * The browser extension's Touch ID passkey (rpID `bramble.sh`), kept by the macOS AutoFill
+ * extension. Hidden from every client and never sent off the Mac that made it. See
+ * docs/macos-credential-provider.md.
+ */
+export interface UnlockKeyEntryData extends BaseEntryData {
+	type: "unlock-key";
+	passkey: PasskeyCredential;
+}
+
+export type EntryData =
+	| LoginEntryData
+	| CardEntryData
+	| NoteEntryData
+	| SshKeyEntryData
+	| UnlockKeyEntryData;
 
 export type Entry = EntryData & { id: string };
 export type LoginEntry = LoginEntryData & { id: string };
@@ -268,6 +285,7 @@ import {
 	upsertRecoverySlot,
 	type WebauthnKeyMeta,
 } from "../vault/slot-policy";
+import { visibleEntries } from "../vault/visible";
 import {
 	createPrfCredential,
 	getPrfSecretAcrossRpIds,
@@ -307,6 +325,8 @@ export interface VaultState {
 	/** The last setup-flow join failure (e.g. password mismatch), or null. */
 	joinError: string | null;
 	entries: Entry[];
+	/** The browser extension's Touch ID keys this device holds, which `entries` leaves out. */
+	unlockKeys: (UnlockKeyEntryData & { id: string })[];
 	/**
 	 * Every attachment the vault shows (see `shownFiles`): not detached, and not taken by a
 	 * delete of its entry. Empty where the platform has no file adapter. State, not an action,
@@ -617,6 +637,12 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 	const [biometryEnrolled, setBiometryEnrolled] = useState(false);
 	const [ready, setReady] = useState(false);
 	const [entries, setEntries] = useState<Entry[]>([]);
+	// What every screen gets; the hidden unlock key stays in `entries` for mutations and the mirror.
+	const shownEntries = useMemo(() => visibleEntries(entries), [entries]);
+	const unlockKeys = useMemo(
+		() => entries.filter((e): e is UnlockKeyEntryData & { id: string } => e.type === "unlock-key"),
+		[entries],
+	);
 	const [error, setError] = useState<string | null>(null);
 	const [webauthnSlots, setWebauthnSlots] = useState<WebauthnSlot[]>([]);
 	const [hasPasswordSlot, setHasPasswordSlot] = useState(false);
@@ -1390,7 +1416,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 				return vaultFiles.sealer.describe(record);
 			};
 			const out = await toKdbxExport(
-				latestRef.current.entries,
+				visibleEntries(latestRef.current.entries),
 				filesRef.current,
 				t`Attachments`,
 				describe,
@@ -2207,7 +2233,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 			canOpenFiles,
 			canSaveFiles,
 			canPickFiles,
-			entries,
+			entries: shownEntries,
+			unlockKeys,
 			conflicts,
 			error,
 			vaultError,
@@ -2234,7 +2261,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 			canOpenFiles,
 			canSaveFiles,
 			canPickFiles,
-			entries,
+			shownEntries,
+			unlockKeys,
 			conflicts,
 			error,
 			vaultError,

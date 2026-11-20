@@ -87,12 +87,12 @@ if (existsSync(androidSrc)) {
 	}
 }
 
-// --- iOS .xcstrings: every key has a localization for each target locale ---
-if (existsSync(XCSTRINGS)) {
-	const cat = JSON.parse(readFileSync(XCSTRINGS, "utf8"));
+// --- .xcstrings: every key has a localization for each target locale ---
+for (const path of XCSTRINGS.filter((p) => existsSync(p))) {
+	const cat = JSON.parse(readFileSync(path, "utf8"));
 	for (const { code } of LOCALES) {
 		const miss = Object.keys(cat.strings ?? {}).filter((k) => !cat.strings[k].localizations?.[code]);
-		if (miss.length) note(`xcstrings[${code}]: ${miss.length} key(s) missing`);
+		if (miss.length) note(`xcstrings[${code}] ${path}: ${miss.length} key(s) missing`);
 	}
 }
 

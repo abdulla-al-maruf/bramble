@@ -46,4 +46,19 @@ class PasskeyPolicyTest {
         assertFalse(PasskeyPolicy.needsVerification("preferred", wantsPrf = false))
         assertFalse(PasskeyPolicy.needsVerification(null, wantsPrf = false))
     }
+
+    @Test
+    fun reservesBrambleShInAnyCase() {
+        assertTrue(PasskeyPolicy.isReservedRpId("bramble.sh"))
+        assertTrue(PasskeyPolicy.isReservedRpId("BRAMBLE.SH"))
+        assertTrue(PasskeyPolicy.isReservedRpId("bramble.sh."))
+    }
+
+    @Test
+    fun leavesSubdomainsAlone() {
+        assertFalse(PasskeyPolicy.isReservedRpId("mailbox.bramble.sh"))
+        assertFalse(PasskeyPolicy.isReservedRpId("notbramble.sh"))
+        assertFalse(PasskeyPolicy.isReservedRpId("bramble.sh.evil.com"))
+        assertFalse(PasskeyPolicy.isReservedRpId(""))
+    }
 }

@@ -7,6 +7,7 @@ import { usePlatform } from "../context/PlatformContext";
 import { planAssociationUpdates } from "../vault/association";
 import { planPasskeyPlacement, withPasskey } from "../vault/passkey";
 import { planPendingLogins } from "../vault/pending-login";
+import { pendingPasskeyToast } from "./pending-passkey-toast";
 import { useVault } from "./useVault";
 import { useVaultRegistry } from "./useVaultRegistry";
 
@@ -33,9 +34,11 @@ export function usePendingHandoffs(): void {
 				try {
 					const placement = planPasskeyPlacement(readEntries(), pk.rpId, pk.rpName, pk);
 					let loginName: string;
+					let type: "login" | "unlock-key" = "login";
 					if (placement.kind === "create") {
 						await addEntry(placement.data);
 						loginName = placement.data.name;
+						type = placement.data.type;
 					} else {
 						const entry = readEntries().find((e) => e.id === placement.entryId);
 						if (entry?.type !== "login") continue;
@@ -47,10 +50,7 @@ export function usePendingHandoffs(): void {
 						loginName = entry.name;
 					}
 					show({
-						message:
-							placement.kind === "create"
-								? i18n._(msg`Passkey saved as ${loginName}`)
-								: i18n._(msg`Passkey added to ${loginName}`),
+						message: pendingPasskeyToast(placement.kind, type, loginName),
 						variant: "success",
 						icon: KeyRound,
 					});

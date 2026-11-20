@@ -6,9 +6,9 @@ import java.net.URI
 
 // Which passkeys the Credential Manager provider offers a caller, and when it must verify the user
 // afresh. Pure (no org.json, no android.*) so the host-JVM tests run it. See docs/passkey-provider.md.
-@RequiresApi(Build.VERSION_CODES.O)
 object PasskeyPolicy {
     /** allowCredentials: null allows any credential; ids compare by canonical spelling. */
+    @RequiresApi(Build.VERSION_CODES.O)
     fun allows(allowIds: List<String>?, credentialIdUrl: String): Boolean =
         allowIds == null || allowIds.any { B64Url.canonical(it) == credentialIdUrl }
 
@@ -20,6 +20,12 @@ object PasskeyPolicy {
         val secure = uri.scheme == "https" || (uri.scheme == "http" && host == "localhost")
         return secure && id.isNotEmpty() && (host == id || host.endsWith(".$id"))
     }
+
+    /** The browser extension unlocks under this rpID, so Bramble never holds or answers one (core-rust's rule). */
+    fun isReservedRpId(rpId: String): Boolean =
+        rpId.removeSuffix(".").equals(UNLOCK_RP_ID, ignoreCase = true)
+
+    private const val UNLOCK_RP_ID = "bramble.sh"
 
     /** A keep-unlocked session isn't a user verification: UV "required" and PRF need a fresh unlock. */
     fun needsVerification(userVerification: String?, wantsPrf: Boolean): Boolean =

@@ -17,7 +17,7 @@ describe("CAPTURE_QR_SCAN", () => {
 		// Decode now runs in the offscreen host (jsqr's lazy import is unreliable in the SW),
 		// so the background just captures and forwards QR_DECODE; the offscreen returns the result.
 		const bg = await loadBackground({
-			lastFocusedWindow: { id: 7 },
+			lastFocusedWindow: { id: 7, type: "normal" },
 			offscreen: (msg) =>
 				msg.type === "QR_DECODE"
 					? { ok: true, data: "otpauth://totp/x" }
@@ -31,9 +31,20 @@ describe("CAPTURE_QR_SCAN", () => {
 		expect(decodeCall?.payload).toMatchObject({ dataUrl: expect.any(String) });
 	});
 
+	it("captures the browsing window behind a Firefox pop-out, not the pop-out", async () => {
+		const popout = { id: 999, type: "popup" };
+		const bg = await loadBackground({
+			lastFocusedWindow: popout,
+			allWindows: [popout, { id: 4, type: "normal" }],
+			offscreen: () => ({ ok: true, data: null }),
+		});
+		await bg.send({ type: "CAPTURE_QR_SCAN" });
+		expect(bg.chrome.tabs.captureVisibleTab).toHaveBeenCalledWith(4, { format: "png" });
+	});
+
 	it("returns null data when the offscreen finds no QR code", async () => {
 		const bg = await loadBackground({
-			lastFocusedWindow: { id: 7 },
+			lastFocusedWindow: { id: 7, type: "normal" },
 			offscreen: (msg) =>
 				msg.type === "QR_DECODE" ? { ok: true, data: null } : { ok: false, error: "x" },
 		});
@@ -42,7 +53,7 @@ describe("CAPTURE_QR_SCAN", () => {
 	});
 
 	it("wraps a capture failure as an error envelope", async () => {
-		const bg = await loadBackground({ lastFocusedWindow: { id: 7 } });
+		const bg = await loadBackground({ lastFocusedWindow: { id: 7, type: "normal" } });
 		bg.chrome.tabs.captureVisibleTab.mockRejectedValueOnce(new Error("capture denied"));
 		const { resp } = await bg.send({ type: "CAPTURE_QR_SCAN" });
 		expect(resp.ok).toBe(false);

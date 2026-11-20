@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	type ChromeMockOptions,
+	extensionSender,
 	loadBackground,
 	pageSender,
 	setAutofillIndex,
@@ -101,5 +102,52 @@ describe("the fill shortcut (#215)", () => {
 		bg.fireCommand("lock-vault");
 		await bg.flush();
 		expect((await select(bg)).ok).toBe(false);
+	});
+});
+
+describe("Fill in Bramble's own window (#215)", () => {
+	const page = { id: TAB, url: "https://example.com/login", active: true };
+	const fill = (bg: Bg, entryId = "login1", sender: unknown = extensionSender) =>
+		bg.send({ type: "AUTOFILL_FILL_TAB", payload: { entryId } }, sender as never);
+	const filledBy = (bg: Bg) =>
+		bg.state.tabMessages.filter((m) => m.message.type === "AUTOFILL_FILL_ENTRY");
+
+	it("asks the page's top frame to fill that login, then lets it fill once", async () => {
+		const bg = await unlocked({ ...OFF, openTabs: [page], tabReply: () => ({ ok: true }) });
+		expect((await fill(bg)).resp).toEqual({ ok: true, data: null });
+		expect(filledBy(bg)).toEqual([
+			{
+				tabId: TAB,
+				message: { type: "AUTOFILL_FILL_ENTRY", payload: { entryId: "login1" } },
+				options: { frameId: 0 },
+			},
+		]);
+		expect((await select(bg)).ok).toBe(true);
+		expect((await select(bg)).ok).toBe(false);
+	});
+
+	it("refuses a login that isn't the page's, and asks no tab", async () => {
+		const elsewhere = { ...page, url: "https://other.example.net/" };
+		const bg = await unlocked({ openTabs: [elsewhere], tabReply: () => ({ ok: true }) });
+		expect((await fill(bg)).resp).toEqual({ ok: false, error: "no_form" });
+		expect(filledBy(bg)).toEqual([]);
+	});
+
+	it("takes the grant back when the page has no form to fill", async () => {
+		const bg = await unlocked({ ...OFF, openTabs: [page], tabReply: () => ({ ok: false }) });
+		expect((await fill(bg)).resp).toEqual({ ok: false, error: "no_form" });
+		expect((await select(bg)).ok).toBe(false);
+	});
+
+	it("is refused to a web page", async () => {
+		const bg = await unlocked({ openTabs: [page], tabReply: () => ({ ok: true }) });
+		expect((await fill(bg, "login1", pageSender("example.com", TAB))).resp.ok).toBe(false);
+		expect(filledBy(bg)).toEqual([]);
+	});
+
+	it("fills nothing while locked", async () => {
+		const bg = await loadBackground({ openTabs: [page], tabReply: () => ({ ok: true }) });
+		expect((await fill(bg)).resp).toEqual({ ok: false, error: "unavailable" });
+		expect(filledBy(bg)).toEqual([]);
 	});
 });

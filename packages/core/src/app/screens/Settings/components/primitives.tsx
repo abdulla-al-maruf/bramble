@@ -59,32 +59,3 @@ export function RowGroup({ label, children }: RowGroupProps) {
 		</div>
 	);
 }
-
-interface ToggleProps {
-	checked: boolean;
-	onChange: (next: boolean) => void;
-	label: string;
-	disabled?: boolean;
-}
-
-/** Switch-style toggle button. */
-export function Toggle({ checked, onChange, label, disabled = false }: ToggleProps) {
-	return (
-		<button
-			type="button"
-			onClick={() => onChange(!checked)}
-			disabled={disabled}
-			aria-label={label}
-			aria-pressed={checked}
-			className={`relative w-11 h-6 rounded-full border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-				checked ? "bg-primary border-primary/20" : "bg-muted border-input-border"
-			}`}
-		>
-			<span
-				className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-card shadow-sm transition-all ${
-					checked ? "left-5 dark:bg-primary-foreground" : "left-0.5 dark:bg-card-foreground"
-				}`}
-			/>
-		</button>
-	);
-}

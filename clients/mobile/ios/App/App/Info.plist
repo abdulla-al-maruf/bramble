@@ -57,7 +57,7 @@
 	<!-- Setting up a 2FA code elsewhere hands the otpauth:// URI to whichever app the user
 	     picked under Settings > Apps > Passwords > "Set Up Codes In". Registering the scheme
 	     is the WHOLE mechanism for appearing in that list; there is no API for it. An arriving
-	     URI only ever prefills a form, never writes to the vault. See docs/totp-uri-handler.md. -->
+	     URI writes nothing until the user taps a save. See docs/totp-uri-handler.md. -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

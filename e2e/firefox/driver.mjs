@@ -249,12 +249,14 @@ export async function launch() {
 			await browser.close(options);
 			await browser.activate(tab);
 		},
-		async quit() {
+		/** Close Firefox and delete its profile, after `beforeRemove(profile)` reads what it needs. */
+		async quit({ beforeRemove } = {}) {
 			await Promise.race([send("browser.close").catch(() => {}), sleep(3000)]);
 			ws.close();
 			await sleep(500);
 			if (child.exitCode === null) child.kill("SIGTERM");
 			await sleep(500);
+			beforeRemove?.(profile);
 			rmSync(profile, { recursive: true, force: true });
 		},
 	};

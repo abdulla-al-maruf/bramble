@@ -471,6 +471,8 @@ jobs:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
           # Touch ID's keychain entitlement needs this embedded; build-macos.ts refuses without it.
           APPLE_PROVISIONING_PROFILE: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
+          # The AutoFill extension's own profile; build-macos.ts signs the appex with it.
+          APPLE_AUTOFILL_PROVISIONING_PROFILE: ${{ secrets.APPLE_AUTOFILL_PROVISIONING_PROFILE }}
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}

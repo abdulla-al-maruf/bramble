@@ -121,6 +121,16 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ENTITLEMENTS = join(ROOT, "clients/desktop/src-tauri/entitlements.plist");
 /** Where a Mac that signs releases keeps the profile; CI passes it in APPLE_PROVISIONING_PROFILE. */
 const PROFILE = join(ROOT, "clients/desktop/macos/profiles/Bramble.provisionprofile");
+const AUTOFILL_PROFILE = join(
+	ROOT,
+	"clients/desktop/macos/profiles/BrambleAutoFill.provisionprofile",
+);
+const AUTOFILL_ENTITLEMENTS = join(
+	ROOT,
+	"clients/desktop/macos/BrambleAutoFill/BrambleAutoFill.entitlements",
+);
+/** The unsigned appex build-appex.mjs leaves for the bundle step. */
+const APPEX = join(ROOT, "clients/desktop/macos/build/BrambleAutoFill.appex");
 
 /**
  * The Touch ID gate's entitlement, the profile that grants it, and a pre-signed browser-link
@@ -159,12 +169,8 @@ function keychainEntitlement(): { config?: string; cleanup?: () => void } {
 		for (const step of undo.reverse()) step();
 	};
 
-	let profile = PROFILE;
-	const encoded = process.env.APPLE_PROVISIONING_PROFILE;
-	if (encoded) {
-		profile = join(tmp, "Bramble.provisionprofile");
-		writeFileSync(profile, Buffer.from(encoded, "base64"), { mode: 0o600 });
-	} else if (!existsSync(PROFILE)) {
+	const profile = profileFile("APPLE_PROVISIONING_PROFILE", PROFILE, tmp);
+	if (!profile) {
 		cleanup();
 		fail(
 			`no provisioning profile: expected APPLE_PROVISIONING_PROFILE (base64) or ${PROFILE}.\n` +
@@ -179,18 +185,147 @@ function keychainEntitlement(): { config?: string; cleanup?: () => void } {
 	}
 	const helper = join(tmp, "bramble-proxy");
 	copyFileSync(staged, helper);
-	presign(helper, identity, tmp, undo);
+	importCiCertificate(tmp, undo);
+	presign(helper, identity);
+
+	// Signed with its own entitlements and profile before Tauri seals the app around it.
+	if (!existsSync(APPEX)) {
+		cleanup();
+		fail(`no ${APPEX}; build-appex.mjs runs before the compile step.`);
+	}
+	const autofillProfile = profileFile("APPLE_AUTOFILL_PROVISIONING_PROFILE", AUTOFILL_PROFILE, tmp);
+	if (!autofillProfile) {
+		cleanup();
+		fail(
+			`no AutoFill profile: expected APPLE_AUTOFILL_PROVISIONING_PROFILE (base64) or ${AUTOFILL_PROFILE}.`,
+		);
+	}
+	const appex = join(tmp, "BrambleAutoFill.appex");
+	cpSync(APPEX, appex, { recursive: true });
+	copyFileSync(autofillProfile, join(appex, "Contents/embedded.provisionprofile"));
+	presign(appex, identity, AUTOFILL_ENTITLEMENTS);
 
 	const config = JSON.stringify({
 		bundle: {
 			externalBin: null,
 			macOS: {
 				entitlements: ENTITLEMENTS,
-				files: { "embedded.provisionprofile": profile, "Helpers/bramble-proxy": helper },
+				files: {
+					"embedded.provisionprofile": profile,
+					"Helpers/bramble-proxy": helper,
+					"PlugIns/BrambleAutoFill.appex": appex,
+				},
 			},
 		},
 	});
 	return { config, cleanup };
+}
+
+/**
+ * Fails on an expired signing certificate or profile, warns inside 30 days. A Developer ID
+ * profile's own ExpirationDate (18 years) is meaningless: it dies with the certificates it embeds,
+ * including when the certificate is renewed. See docs/release-signing.md.
+ */
+function checkSigningExpiry(): void {
+	if (process.platform !== "darwin") return;
+	const identity = process.env.APPLE_SIGNING_IDENTITY;
+	if (!identity) return;
+
+	const report = (what: string, at: Date): void => {
+		const left = Math.floor((at.getTime() - Date.now()) / 86_400_000);
+		const on = at.toISOString().slice(0, 10);
+		if (left < 0)
+			fail(
+				`${what} expired on ${on}; codesign would reject this build. See docs/release-signing.md.`,
+			);
+		if (left <= 30)
+			console.error(
+				`warning: ${what} expires on ${on}, in ${left} day(s). See docs/release-signing.md.`,
+			);
+	};
+	const notAfter = (der: Buffer): Date | undefined => {
+		try {
+			const out = execFileSync("openssl", ["x509", "-inform", "DER", "-noout", "-enddate"], {
+				input: der,
+				encoding: "utf8",
+			});
+			return new Date(
+				out
+					.trim()
+					.replace(/^notAfter=/, "")
+					.replace(/\s+/g, " "),
+			);
+		} catch {
+			return undefined;
+		}
+	};
+
+	// In CI the certificate arrives as APPLE_CERTIFICATE, not in a keychain; its profile is still checked.
+	if (!process.env.APPLE_CERTIFICATE) {
+		let latest: Date | undefined;
+		try {
+			const pem = execFileSync("security", ["find-certificate", "-c", identity, "-p", "-a"], {
+				encoding: "utf8",
+			});
+			// A renewed certificate can sit beside the old one; codesign picks a valid one.
+			for (const block of pem.split(/(?<=-----END CERTIFICATE-----)/)) {
+				if (!block.trim()) continue;
+				const der = execFileSync("openssl", ["x509", "-outform", "DER"], { input: block.trim() });
+				const at = notAfter(der);
+				if (at && (!latest || at > latest)) latest = at;
+			}
+		} catch {}
+		if (latest) report(`the signing certificate "${identity}"`, latest);
+		else
+			console.error(`note: no readable certificate for "${identity}"; skipping its expiry check.`);
+	}
+
+	const tmp = mkdtempSync(join(tmpdir(), "bramble-expiry-"));
+	try {
+		for (const { env, path } of SIGNING_PROFILES) {
+			const profile = profileFile(env, path, tmp);
+			if (!profile) continue;
+			const plist = execFileSync("security", ["cms", "-D", "-i", profile], {
+				encoding: "utf8",
+				stdio: ["ignore", "pipe", "ignore"],
+			});
+			let latest: Date | undefined;
+			for (let i = 0; ; i++) {
+				let b64: string;
+				try {
+					b64 = execFileSync(
+						"plutil",
+						["-extract", `DeveloperCertificates.${i}`, "raw", "-o", "-", "-"],
+						{ input: plist, encoding: "utf8", stdio: ["pipe", "pipe", "ignore"] },
+					);
+				} catch {
+					break;
+				}
+				const at = notAfter(Buffer.from(b64.trim(), "base64"));
+				if (at && (!latest || at > latest)) latest = at;
+			}
+			if (!latest) fail(`the ${env} profile embeds no readable certificate.`);
+			report(`the certificate in the ${env} profile`, latest as Date);
+		}
+	} finally {
+		rmSync(tmp, { recursive: true, force: true });
+	}
+}
+
+/** Where each profile comes from: base64 in CI, a gitignored file on a Mac that signs releases. */
+const SIGNING_PROFILES = [
+	{ env: "APPLE_PROVISIONING_PROFILE", path: PROFILE },
+	{ env: "APPLE_AUTOFILL_PROVISIONING_PROFILE", path: AUTOFILL_PROFILE },
+];
+
+function profileFile(env: string, path: string, tmp: string): string | undefined {
+	const encoded = process.env[env];
+	if (encoded) {
+		const out = join(tmp, `${env}.provisionprofile`);
+		writeFileSync(out, Buffer.from(encoded, "base64"), { mode: 0o600 });
+		return out;
+	}
+	return existsSync(path) ? path : undefined;
 }
 
 /** Which staged proxy this build ships: the same target the app is built for. */
@@ -203,14 +338,10 @@ function proxyTriple(): string {
 }
 
 /**
- * Sign the helper as the bundle needs it and Tauri would not: Developer ID, hardened runtime and a
- * secure timestamp (notarization requires all three on nested code), and no entitlements.
- *
- * Locally the identity is in the login keychain. In CI it arrives as APPLE_CERTIFICATE, which Tauri
- * imports into a keychain of its own only once bundling starts, so it is imported here the same way
- * into a throwaway keychain, searched first and removed with the build.
+ * In CI the identity arrives as APPLE_CERTIFICATE, which Tauri imports only once bundling starts,
+ * so nested code signed before that needs it in a throwaway keychain, searched first.
  */
-function presign(path: string, identity: string, tmp: string, undo: (() => void)[]): void {
+function importCiCertificate(tmp: string, undo: (() => void)[]): void {
 	const cert = process.env.APPLE_CERTIFICATE;
 	if (cert) {
 		const security = (...args: string[]) =>
@@ -251,9 +382,22 @@ function presign(path: string, identity: string, tmp: string, undo: (() => void)
 		);
 		security("list-keychains", "-d", "user", "-s", keychain, ...searched);
 	}
+}
+
+/** Nested code Tauri does not sign: Developer ID, hardened runtime, secure timestamp. */
+function presign(path: string, identity: string, entitlements?: string): void {
 	execFileSync(
 		"codesign",
-		["--force", "--options", "runtime", "--timestamp", "--sign", identity, path],
+		[
+			"--force",
+			"--options",
+			"runtime",
+			"--timestamp",
+			...(entitlements ? ["--entitlements", entitlements] : []),
+			"--sign",
+			identity,
+			path,
+		],
 		{ stdio: "inherit" },
 	);
 }
@@ -298,6 +442,12 @@ function assertKeychainEntitled(): void {
 		fail(
 			`${helper} carries the keychain entitlement with no profile of its own; macOS would kill it.`,
 		);
+	const appex = join(app, "Contents/PlugIns/BrambleAutoFill.appex");
+	if (!existsSync(join(appex, "Contents/embedded.provisionprofile")))
+		fail(`${appex} is missing or has no embedded profile; macOS would never load it.`);
+	// Without the sandbox it registers and never appears in AutoFill & Passwords, with no error.
+	if (!entitlements(appex).includes("com.apple.security.app-sandbox"))
+		fail(`${appex} is not sandboxed; macOS would never list it.`);
 	try {
 		execFileSync("codesign", ["--verify", "--strict", "--deep", app], { stdio: "pipe" });
 	} catch (e) {
@@ -375,6 +525,13 @@ if (passed.includes("--canonical") && ROOT !== CANONICAL) {
 		if (!existsSync(from)) continue;
 		mkdirSync(dirname(join(ROOT, crate, file)), { recursive: true });
 		cpSync(from, join(ROOT, crate, file), { recursive: true, preserveTimestamps: true });
+	}
+	// The AutoFill extension build-appex.mjs compiled there, which the bundle half signs.
+	const appex = join(CANONICAL, "clients/desktop/macos/build/BrambleAutoFill.appex");
+	if (existsSync(appex)) {
+		rmSync(APPEX, { recursive: true, force: true });
+		mkdirSync(dirname(APPEX), { recursive: true });
+		cpSync(appex, APPEX, { recursive: true, preserveTimestamps: true });
 	}
 	process.exit(0);
 }
@@ -477,6 +634,9 @@ function reproduciblePaths(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
 		CXXFLAGS: join2(env.CXXFLAGS, c),
 	};
 }
+
+// Before the compile and before any YubiKey prompt, so a dead certificate costs neither.
+if (!compileOnly) checkSigningExpiry();
 
 if (!bundleOnly) {
 	const env = reproduciblePaths(envNow());

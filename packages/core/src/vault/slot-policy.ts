@@ -26,6 +26,23 @@ function isPrimaryUnlock(slot: Slot): boolean {
 	return slot.kind === SLOT_KIND_PASSWORD || slot.kind === SLOT_KIND_WEBAUTHN;
 }
 
+// core-rust passkey.rs UNLOCK_CREDENTIAL_ID_PREFIX: Bramble Desktop's AutoFill extension made it.
+const HELD_BY_BRAMBLE_PREFIX = [0x42, 0x52, 0x4d, 0x55];
+
+/** A key Bramble Desktop holds can only be used once Bramble is unlocked. */
+export function isHeldByBramble(credentialId: Uint8Array): boolean {
+	return HELD_BY_BRAMBLE_PREFIX.every((b, i) => credentialId[i] === b);
+}
+
+// A way back in that doesn't itself need Bramble unlocked.
+function isIndependentUnlock(slot: Slot): boolean {
+	if (slot.kind === SLOT_KIND_WEBAUTHN)
+		return !isHeldByBramble((slot as WebauthnSlot).credentialId);
+	return isPrimaryUnlock(slot);
+}
+
+const HELD_ONLY = "Bramble Desktop holds your only other key. Add a security key or passkey first.";
+
 function withSlotLimit(blob: VaultBlob): VaultBlob {
 	if (blob.slots.length > MAX_SLOTS) {
 		throw new Error(`This vault already has the maximum number of slots (${MAX_SLOTS}).`);
@@ -56,6 +73,8 @@ export interface WebauthnKeyMeta {
 	addedAt: number;
 	kind: WebauthnKeyKind;
 	synced: boolean;
+	/** Present (true) only for a key Bramble Desktop's AutoFill extension holds. */
+	heldByBramble?: true;
 }
 
 /**
@@ -68,7 +87,7 @@ export interface WebauthnKeyMeta {
  * be a synced platform credential it might not be.
  */
 export function describeWebauthnKeys(
-	slots: { slotId: Uint8Array }[],
+	slots: { slotId: Uint8Array; credentialId?: Uint8Array }[],
 	labels: Record<string, StoredKeyLabel>,
 	toB64: (b: Uint8Array) => string,
 ): WebauthnKeyMeta[] {
@@ -81,6 +100,9 @@ export function describeWebauthnKeys(
 			addedAt: meta?.addedAt ?? 0,
 			kind: meta?.kind ?? "securityKey",
 			synced: meta?.synced ?? false,
+			...(slot.credentialId && isHeldByBramble(slot.credentialId)
+				? { heldByBramble: true as const }
+				: {}),
 		};
 	});
 }
@@ -102,6 +124,7 @@ export function removeWebauthnSlot(blob: VaultBlob, slotId: Uint8Array): VaultBl
 			"Can't remove the last unlock method. Register another security key or set a master password first.",
 		);
 	}
+	if (!filtered.some(isIndependentUnlock)) throw new Error(HELD_ONLY);
 	return { ...blob, slots: filtered };
 }
 
@@ -122,6 +145,7 @@ export function removePasswordSlot(blob: VaultBlob): VaultBlob {
 			"Can't disable the master password. Register a security key first so you can still unlock.",
 		);
 	}
+	if (!filtered.some(isIndependentUnlock)) throw new Error(HELD_ONLY);
 	return { ...blob, slots: filtered };
 }
 

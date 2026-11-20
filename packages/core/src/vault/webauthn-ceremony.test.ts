@@ -61,6 +61,16 @@ describe("createPrfCredential ceremony options", () => {
 		});
 	});
 
+	it("names the credential after the key, so the passkey sheet and Bramble Desktop can tell keys apart", async () => {
+		const api = stubCredentials();
+		await createPrfCredential("Brave · Personal", { kind: "platform" });
+
+		expect(publicKeyArg(api.create).user).toMatchObject({
+			name: "Brave · Personal",
+			displayName: "Brave · Personal",
+		});
+	});
+
 	it("keeps a security key non-discoverable so it does not burn a resident slot", async () => {
 		const api = stubCredentials();
 		await createPrfCredential("YubiKey", { kind: "securityKey" });
@@ -290,6 +300,18 @@ describe("unlock failures across browsers", () => {
 				forUnlock: true,
 			}),
 		).rejects.toThrow(/registered per browser/);
+	});
+
+	it("points at Bramble Desktop when it holds the key, since a key removed there fails the same way", async () => {
+		const get = vi.fn(async () => {
+			throw Object.assign(new Error(""), { name: "NotAllowedError" });
+		});
+		stubCredentials({ get });
+		const held = new Uint8Array([0x42, 0x52, 0x4d, 0x55, 1, 2, 3]);
+
+		await expect(
+			getPrfSecret([{ credentialId: held }], new Uint8Array(32), { forUnlock: true }),
+		).rejects.toThrow(/removed .* in Bramble Desktop, remove it here too/);
 	});
 
 	it("leaves registration's fallback get alone, where a refusal means something else", async () => {

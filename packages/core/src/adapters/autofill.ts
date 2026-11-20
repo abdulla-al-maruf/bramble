@@ -68,7 +68,17 @@ interface CardIndexEntry {
 	customFields?: CustomFieldData[];
 }
 
-export type IndexEntry = LoginIndexEntry | CardIndexEntry;
+/**
+ * The browser extension's Touch ID passkey, which only the macOS AutoFill extension serves.
+ * Every other consumer of the index skips it. See docs/macos-credential-provider.md.
+ */
+export interface UnlockKeyIndexEntry {
+	type: "unlock-key";
+	id: string;
+	passkey: PasskeyCredential;
+}
+
+export type IndexEntry = LoginIndexEntry | CardIndexEntry | UnlockKeyIndexEntry;
 
 /** Result of a content-script query. Each list is empty when the page has no fields of that kind, or the vault is locked. */
 export interface QueryResult {

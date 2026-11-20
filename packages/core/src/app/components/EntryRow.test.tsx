@@ -115,6 +115,18 @@ describe("EntryRow action controls", () => {
 	});
 });
 
+describe("EntryRow fill (#215)", () => {
+	it("offers Fill only when the row is matched to the page", () => {
+		renderRow();
+		expect(screen.queryByRole("button", { name: "Fill" })).toBeNull();
+		cleanup();
+		const onFill = vi.fn();
+		renderRow({ onFill });
+		fireEvent.click(screen.getByRole("button", { name: "Fill" }));
+		expect(onFill).toHaveBeenCalledExactlyOnceWith("e1");
+	});
+});
+
 describe("EntryRow selection", () => {
 	it("offers no checkbox when the list isn't selectable", () => {
 		renderRow();
@@ -135,7 +147,7 @@ describe("EntryRow selection", () => {
 		const onToggleSelect = vi.fn();
 		renderRow({ selectMode: true, onToggleSelect });
 		fireEvent.click(screen.getByRole("checkbox", { name: "Select GitHub" }));
-		expect(onToggleSelect).toHaveBeenCalledExactlyOnceWith("e1");
+		expect(onToggleSelect).toHaveBeenCalledExactlyOnceWith("e1", false);
 	});
 
 	it("toggles instead of opening when the row itself is tapped", () => {
@@ -143,8 +155,19 @@ describe("EntryRow selection", () => {
 		const onToggleSelect = vi.fn();
 		renderRow({ selectMode: true, onSelect, onToggleSelect });
 		fireEvent.click(rowButton());
-		expect(onToggleSelect).toHaveBeenCalledExactlyOnceWith("e1");
+		expect(onToggleSelect).toHaveBeenCalledExactlyOnceWith("e1", false);
 		expect(onSelect).not.toHaveBeenCalled();
+	});
+
+	it("asks for a range on a shift-click, on the row or its checkbox (#220)", () => {
+		const onToggleSelect = vi.fn();
+		renderRow({ selectMode: true, onToggleSelect });
+		fireEvent.click(rowButton(), { shiftKey: true });
+		fireEvent.click(screen.getByRole("checkbox", { name: "Select GitHub" }), { shiftKey: true });
+		expect(onToggleSelect.mock.calls).toEqual([
+			["e1", true],
+			["e1", true],
+		]);
 	});
 
 	// The row-wide tap target duplicates the checkbox, so it must not read as a

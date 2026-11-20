@@ -1093,10 +1093,12 @@ pub struct PendingLinkView {
     pub label: String,
 }
 
-/// Open the Connect dialog's window for an emoji link.
-#[tauri::command]
+/// Open the Connect dialog's window for an emoji link. The browser manifests are rewritten too,
+/// off the main thread, so a browser installed since launch can reach the app (#218).
+#[tauri::command(async)]
 pub fn link_window_begin() {
     pairing::begin_link_window();
+    crate::manifest::refresh();
 }
 
 /// The dialog closed: refuse any link in progress and drop the invite it armed.

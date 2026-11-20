@@ -146,6 +146,8 @@ export async function savePlacement(plan: PasskeyPlacement): Promise<void> {
 	const vaultId = requireActiveVaultId();
 	const base = await readAndDecodeVault(vaultId);
 	if (plan.kind === "create") {
+		// The browser's provider refuses bramble.sh before placement, so a create here is a login.
+		if (plan.data.type !== "login") throw new Error("only a login can be placed here");
 		const id = globalThis.crypto.randomUUID();
 		const hlc = await nextStamp();
 		const enc = await encryptEntry(

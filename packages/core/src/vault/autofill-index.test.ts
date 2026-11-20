@@ -56,4 +56,55 @@ describe("toAutofillIndex", () => {
 			subdomainMatch: "exact",
 		});
 	});
+
+	it("drops bramble.sh passkeys from the index but keeps the entry's others", () => {
+		const pk = (credentialId: string, rpId: string) => ({
+			credentialId,
+			rpId,
+			userHandle: "dXNlcg",
+			alg: -7,
+			publicKeyCose: "pk",
+			privateKey: "sk",
+			signCount: 0,
+			createdAt: 0,
+		});
+		const both = {
+			type: "login",
+			id: "both",
+			name: "Both",
+			urls: ["https://example.com"],
+			username: "u",
+			password: "p",
+			passkeys: [pk("unlock", "bramble.sh"), pk("site", "example.com")],
+		} as unknown as Entry;
+		const onlyUnlock = {
+			type: "login",
+			id: "only",
+			name: "Vault",
+			urls: [],
+			username: "vault@local",
+			password: "",
+			passkeys: [pk("unlock2", "bramble.sh")],
+		} as unknown as Entry;
+		const [a, b] = toAutofillIndex([both, onlyUnlock]) as {
+			passkeys?: { credentialId: string }[];
+		}[];
+		expect(a?.passkeys?.map((p) => p.credentialId)).toEqual(["site"]);
+		expect(b?.passkeys).toBeUndefined();
+	});
+
+	it("projects an unlock-key entry as its own item, for the macOS AutoFill extension only", () => {
+		const passkey = {
+			credentialId: "Y2lk",
+			rpId: "bramble.sh",
+			userHandle: "dWg=",
+			alg: -7,
+			publicKeyCose: "pk",
+			privateKey: "sk",
+			signCount: 0,
+			createdAt: 0,
+		};
+		const entry = { id: "u", type: "unlock-key", name: "bramble.sh", passkey } as unknown as Entry;
+		expect(toAutofillIndex([entry])).toEqual([{ type: "unlock-key", id: "u", passkey }]);
+	});
 });

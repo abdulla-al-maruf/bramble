@@ -25,7 +25,9 @@ vi.mock("../../../../hooks/usePrefs", () => ({
 		update: h.update,
 	}),
 }));
-vi.mock("../../../../hooks/useVault", () => ({ useVault: () => ({ entries: [] }) }));
+vi.mock("../../../../hooks/useVault", () => ({
+	useVaultActions: () => ({ readEntries: () => [] }),
+}));
 vi.mock("../../../../hooks/useVaultRegistry", () => ({
 	useVaultRegistry: () => ({ vaults: [], activeId: null }),
 }));

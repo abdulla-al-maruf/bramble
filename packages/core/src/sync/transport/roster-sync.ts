@@ -16,6 +16,7 @@ import {
 	type RosterPayload,
 	verifyRemoteRoster,
 } from "..";
+import { outgoingPayload } from "../entries-payload";
 import type { Channel } from "./channel";
 import type { Awaitable } from "./handshake";
 import type { PeerSession } from "./mesh";
@@ -81,7 +82,7 @@ interface SyncEnvelope {
 }
 
 async function localEnvelope(opts: RosterSyncOptions): Promise<string> {
-	const entries = await opts.fetchLocalPayload();
+	const entries = outgoingPayload(await opts.fetchLocalPayload());
 	const roster = opts.fetchLocalRoster ? await opts.fetchLocalRoster() : undefined;
 	return JSON.stringify({ entries, roster } satisfies SyncEnvelope);
 }

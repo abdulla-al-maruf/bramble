@@ -69,4 +69,5 @@ playwright-report/
 # files are per-machine signing material. Both got committed twice by a `git add -A packages`
 # before this existed.
 clients/desktop/macos/build/
+clients/desktop/macos/ffi/
 *.provisionprofile

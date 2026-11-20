@@ -73,7 +73,7 @@ msgstr "{0, plural, one {No respaldado: # archivo adjunto aún no está en este 
 msgid "{0, plural, one {This backup has # attachment, which Bramble can't store on this device yet. Keep the backup file, which still has it.} other {This backup has # attachments, which Bramble can't store on this device yet. Keep the backup file, which still has them.}}"
 msgstr "{0, plural, one {Este respaldo tiene # archivo adjunto, que Bramble aún no puede almacenar en este dispositivo. Conserve el archivo de respaldo, que aún lo contiene.} other {Este respaldo tiene # archivos adjuntos, que Bramble aún no puede almacenar en este dispositivo. Conserve el archivo de respaldo, que aún los contiene.}}"
 
-#. placeholder {0}: fingerprint(d.publicKey)
+#. placeholder {0}: shortKey(d.publicKey)
 #. placeholder {1}: addedOn(d.addedAt)
 #: packages/core/src/app/screens/Settings/components/SyncConnectSection.tsx
 msgid "{0} · added {1}"
@@ -248,7 +248,7 @@ msgstr "{quarantined, plural, one {# entrada dañada permaneció en la bóveda a
 #~ msgid "{quarantined} damaged entries stayed in the old vault."
 #~ msgstr "{quarantined} entradas dañadas permanecieron en la caja fuerte antigua."
 
-#: packages/core/src/app/entry-modes/login.tsx
+#: packages/core/src/app/components/TotpCode.tsx
 msgid "{remaining}s left"
 msgstr "Restan {remaining}s"
 
@@ -300,6 +300,15 @@ msgstr "15 minutos"
 #: packages/core/src/app/screens/Settings/components/GeneralSection.tsx
 msgid "2 minutes"
 msgstr "2 minutos"
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "2FA code"
+msgstr "Código 2FA"
+
+#. placeholder {0}: entry.name
+#: packages/core/src/app/routes/TotpSetupRoute.tsx
+msgid "2FA code added to {0}"
+msgstr "Código 2FA agregado a {0}"
 
 #: packages/core/src/app/screens/Settings/components/GeneralSection.tsx
 msgid "30 minutes"
@@ -363,8 +372,13 @@ msgid "Actions"
 msgstr "Acciones"
 
 #: packages/core/src/app/screens/Settings/components/TapToUnlockSection.tsx
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
 msgid "Add"
 msgstr "Añadir"
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Add 2FA code"
+msgstr "Agregar código 2FA"
 
 #: packages/core/src/app/screens/Settings/components/BackupSection.tsx
 msgid "Add a backup target"
@@ -373,6 +387,10 @@ msgstr "Añadir un destino de copia de seguridad"
 #: packages/core/src/app/screens/Settings/components/SyncConnectSection.tsx
 msgid "Add a device"
 msgstr "Añadir un dispositivo"
+
+#: packages/core/src/app/screens/Settings/components/MasterPasswordSection.tsx
+msgid "Add a key outside Bramble Desktop before you can turn off the master password."
+msgstr "Añada una clave fuera de Bramble Desktop antes de poder desactivar la contraseña maestra."
 
 #: packages/core/src/app/screens/Settings/components/MasterPasswordSection.tsx
 msgid "Add a key under Tap to unlock before you can turn off the master password."
@@ -415,6 +433,11 @@ msgstr "Añadir nuevo"
 msgid "Add tag"
 msgstr "Añadir etiqueta"
 
+#. placeholder {0}: target.name
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Add the 2FA code to {0}"
+msgstr "Agregar el código 2FA a {0}"
+
 #: packages/core/src/app/screens/Settings/components/DesktopLinkSection.tsx
 msgid "Add the desktop's vault"
 msgstr "Añadir la bóveda del escritorio"
@@ -426,6 +449,10 @@ msgstr "Añadir los sitios web que cubre este inicio de sesión. Deje vacío si 
 #: packages/core/src/app/entry-modes/login.tsx
 msgid "Add URL"
 msgstr "Añadir URL"
+
+#: packages/core/src/app/screens/Settings/components/BrowserUnlockKeysSection.tsx
+msgid "Added {added}"
+msgstr "Añadido {added}"
 
 #. placeholder {0}: next.length
 #: packages/core/src/app/entry-modes/tags.tsx
@@ -439,6 +466,10 @@ msgstr "Añadida al crear una clave de acceso en un sitio con Bramble. Elimine p
 #: packages/core/src/app/screens/Settings/components/SyncConnectSection.tsx
 msgid "Adding a device needs a master password"
 msgstr "Añadir un dispositivo requiere una contraseña maestra"
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Adding…"
+msgstr "Agregando…"
 
 #: packages/core/src/app/screens/Settings/components/TwoVaultsPrompt.tsx
 msgid "Adds {desktopName} next to {browserName}. Switch between them from the vault menu."
@@ -614,8 +645,8 @@ msgid "Attachments ready to add to entries you already have"
 msgstr "Archivos adjuntos listos para añadir a las entradas que usted ya tiene."
 
 #: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
-msgid "Authenticator key"
-msgstr "Clave de autenticador"
+#~ msgid "Authenticator key"
+#~ msgstr "Clave de autenticador"
 
 #: packages/core/src/app/entry-modes/login.tsx
 msgid "Authenticator key (TOTP)"
@@ -750,6 +781,14 @@ msgstr "Bramble no ha podido abrir esta bóveda ahora mismo. Informe este error 
 msgid "Bramble couldn't safely update this device's key storage, so the vault stayed locked. Try again."
 msgstr "Bramble no pudo actualizar de forma segura el almacenamiento de claves de este dispositivo, por lo que la caja fuerte permaneció bloqueada. Inténtelo de nuevo."
 
+#: packages/core/src/hooks/useVault.tsx
+#~ msgid "Bramble Desktop didn't answer. Open it and try again, or use your master password."
+#~ msgstr "Bramble Desktop no respondió. Ábralo e inténtelo de nuevo o use su contraseña maestra."
+
+#: packages/core/src/app/screens/Settings/components/MasterPasswordSection.tsx
+#~ msgid "Bramble Desktop holds your Touch ID key, so the master password stays on."
+#~ msgstr "Bramble Desktop guarda su clave de Touch ID, de modo que la contraseña maestra permanece activa."
+
 #: packages/core/src/app/ErrorBoundary.tsx
 msgid "Bramble hit an unexpected error. Your vault is safe — it stays encrypted on this device. Try reloading; if it keeps happening, reopen the app."
 msgstr "Bramble ha encontrado un error inesperado. Su bóveda está segura: permanece cifrada en este dispositivo. Intente recargar; si el problema persiste, vuelva a abrir la aplicación."
@@ -795,6 +834,10 @@ msgstr "Bramble solo necesita subir y listar. Restringir la clave a este único 
 #: packages/core/src/app/screens/Settings/components/UpdatesSection.tsx
 msgid "Bramble restarts by itself once this finishes."
 msgstr "Bramble se reiniciará solo una vez que esto finalice."
+
+#: packages/core/src/app/screens/Settings/components/BrowserUnlockKeysSection.tsx
+msgid "Bramble unlocks the browser extension when you use Touch ID there."
+msgstr "Bramble desbloquea la extensión del navegador cuando se usa Touch ID allí."
 
 #: packages/core/src/app/screens/Settings/components/BackupSection.tsx
 msgid "Bramble will never delete anything here, so this can use a credential that isn't allowed to. One that's stolen then can't destroy your backup history."
@@ -974,8 +1017,8 @@ msgid "Choose the vault these items should go into"
 msgstr "Elija la caja fuerte a la que deben ir estos elementos"
 
 #: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
-msgid "Choose where to save this 2FA code."
-msgstr "Elija dónde guardar este código de 2FA."
+#~ msgid "Choose where to save this 2FA code."
+#~ msgstr "Elija dónde guardar este código de 2FA."
 
 #: packages/core/src/app/screens/Settings/components/BackupSection.tsx
 msgid "Choose where to store encrypted backups. Bramble only ever uploads ciphertext, so your provider can't read anything in your vault. Add as many as you like."
@@ -1248,7 +1291,7 @@ msgstr "Copiar contraseña anterior"
 msgid "Copy them anyway"
 msgstr "Copiar de todos modos"
 
-#: packages/core/src/app/entry-modes/login.tsx
+#: packages/core/src/app/components/TotpCode.tsx
 msgid "Copy verification code"
 msgstr "Copiar código de verificación"
 
@@ -1301,6 +1344,10 @@ msgstr "No se pudo leer este archivo."
 #: packages/core/src/app/screens/Restore/RestoreShell.tsx
 msgid "Couldn't restore this backup."
 msgstr "No se pudo restaurar esta copia de seguridad."
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Couldn't save the 2FA code. Try again."
+msgstr "No se pudo guardar el código 2FA. Inténtelo de nuevo."
 
 #: packages/core/src/hooks/useVault.tsx
 msgid "Couldn't save the master password. Please try again."
@@ -1394,6 +1441,10 @@ msgstr "Creando..."
 #: packages/core/src/app/entry-modes/card.tsx
 msgid "Credit or debit card"
 msgstr "Tarjeta de crédito o débito"
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Current code"
+msgstr "Código actual"
 
 #: packages/core/src/app/screens/Settings/components/MasterPasswordSection.tsx
 msgid "Current password"
@@ -1736,6 +1787,10 @@ msgstr "Nombre de host exacto (y puerto, si la URL lo tiene)"
 #~ msgid "Exact hostname only"
 #~ msgstr "Solo nombre de host exacto"
 
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Existing login"
+msgstr "Inicio de sesión existente"
+
 #: packages/core/src/app/entry-modes/tags.tsx
 msgid "Existing tags"
 msgstr "Etiquetas existentes"
@@ -1827,6 +1882,10 @@ msgstr "Los archivos se leen solo en este dispositivo. Nada se sube. Elimine el 
 #: packages/core/src/app/entry-modes/attachments.tsx
 msgid "Files over {LIMIT_MB} MB can't be attached."
 msgstr "Los archivos de más de {LIMIT_MB} MB no se pueden adjuntar."
+
+#: packages/core/src/app/components/EntryRow.tsx
+msgid "Fill"
+msgstr "Autocompletar"
 
 #: packages/core/src/app/screens/Settings/components/BrowserPairingSection.tsx
 #~ msgid "Fill logins from the Bramble extension without unlocking twice."
@@ -2037,6 +2096,10 @@ msgstr "Lo he guardado, continuar"
 #~ msgid "If the numbers differ, someone else is trying to join. Reject it there and start again with a new code."
 #~ msgstr "Si los números no coinciden, alguien está intentando unirse. Rechácelo en ese dispositivo y comience de nuevo con un código nuevo."
 
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "If the site asks for a code to finish setting up, enter this one."
+msgstr "Si el sitio le pide un código para terminar la configuración, introduzca este código."
+
 #: packages/core/src/app/screens/VaultSetup/VaultSetup.tsx
 msgid "If they differ, someone else is trying to join. Reject it there and start again with a new code."
 msgstr "Si difieren, alguien más está intentando unirse. Rechácelo allí y comience de nuevo con un código nuevo."
@@ -2081,6 +2144,10 @@ msgstr "Se importaron {imported} elementos"
 #: packages/core/src/app/screens/Import/ImportShell.tsx
 msgid "Importing…"
 msgstr "Importando..."
+
+#: packages/core/src/app/screens/Settings/components/TapToUnlockSection.tsx
+msgid "in Bramble Desktop"
+msgstr "en Bramble Desktop"
 
 #: packages/core/src/app/screens/Settings/components/BrowserPairingSection.tsx
 #~ msgid "In the Bramble extension, open Settings → Sync → Desktop app and enter this code."
@@ -2348,6 +2415,10 @@ msgstr "Vincular"
 #~ msgid "Link again"
 #~ msgstr "Volver a vincular"
 
+#: packages/core/src/hooks/useVault.tsx
+#~ msgid "Link Bramble Desktop first."
+#~ msgstr "Vincular Bramble Desktop primero."
+
 #: packages/core/src/app/screens/VaultSetup/components/DesktopLinkBanner.tsx
 msgid "Link it instead of making a new vault."
 msgstr "Vincúlela en lugar de crear una bóveda nueva."
@@ -2409,8 +2480,10 @@ msgstr "Bloqueada"
 msgid "Login"
 msgstr "Inicio de sesión"
 
+#. placeholder {0}: data.name
 #. placeholder {0}: info.hostname
 #: packages/core/src/app/components/CornerSavedToast.tsx
+#: packages/core/src/hooks/usePendingHandoffs.tsx
 msgid "Login saved for {0}"
 msgstr "Se ha guardado el inicio de sesión para {0}"
 
@@ -2493,6 +2566,7 @@ msgstr "Seta"
 #: packages/core/src/app/entry-modes/card.tsx
 #: packages/core/src/app/entry-modes/login.tsx
 #: packages/core/src/app/entry-modes/ssh-key.tsx
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
 msgid "Name"
 msgstr "Nombre"
 
@@ -2519,6 +2593,10 @@ msgstr "Nombre Z-A"
 #: packages/core/src/app/screens/CreateEntry/EntryForm.tsx
 msgid "New {modeLabel}"
 msgstr "Nuevo {modeLabel}"
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "New login"
+msgstr "Nuevo inicio de sesión"
 
 #: packages/core/src/app/screens/Settings/components/MasterPasswordSection.tsx
 msgid "New password"
@@ -2556,6 +2634,10 @@ msgstr "No se encontraron elementos importables en este archivo."
 #: packages/core/src/app/screens/VaultHome/VaultHome.tsx
 msgid "No items found matching your search."
 msgstr "No se encontraron elementos que coincidan con su búsqueda."
+
+#: packages/core/src/app/routes/VaultHomeRoute.tsx
+msgid "No login form on this page"
+msgstr "No hay formulario de inicio de sesión en esta página"
 
 #: packages/core/src/app/screens/VaultHome/VaultHome.tsx
 msgid "No logins at risk."
@@ -2814,8 +2896,8 @@ msgid "Optional (e.g. Work)"
 msgstr "Opcional (p. ej., Trabajo)"
 
 #: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
-msgid "Or add it to an existing login"
-msgstr "O añadirlo a un inicio de sesión existente"
+#~ msgid "Or add it to an existing login"
+#~ msgstr "O añadirlo a un inicio de sesión existente"
 
 #: packages/core/src/app/components/ReviewNudgeCard.tsx
 msgid "Or something honest, either works. Reviews are how people find Bramble."
@@ -2871,8 +2953,12 @@ msgid "Passkey added to {0}"
 msgstr "Clave de acceso añadida a {0}"
 
 #: packages/core/src/hooks/usePendingHandoffs.tsx
-msgid "Passkey added to {loginName}"
-msgstr "Clave de acceso añadida a {loginName}"
+#~ msgid "Passkey added to {loginName}"
+#~ msgstr "Clave de acceso añadida a {loginName}"
+
+#: packages/core/src/hooks/pending-passkey-toast.tsx
+msgid "Passkey added to {name}"
+msgstr "Llave de acceso añadida a {name}"
 
 #. placeholder {0}: info.loginName
 #: packages/core/src/app/components/PasskeySavedToast.tsx
@@ -2880,8 +2966,12 @@ msgid "Passkey saved as {0}"
 msgstr "Clave de acceso guardada como {0}"
 
 #: packages/core/src/hooks/usePendingHandoffs.tsx
-msgid "Passkey saved as {loginName}"
-msgstr "Clave de acceso guardada como {loginName}"
+#~ msgid "Passkey saved as {loginName}"
+#~ msgstr "Clave de acceso guardada como {loginName}"
+
+#: packages/core/src/hooks/pending-passkey-toast.tsx
+msgid "Passkey saved as {name}"
+msgstr "Llave de acceso guardada como {name}"
 
 #: packages/core/src/app/entry-modes/login.tsx
 msgid "Passkeys"
@@ -3075,6 +3165,10 @@ msgid "Reading file…"
 msgstr "Leyendo archivo..."
 
 #: packages/core/src/app/screens/VaultHome/VaultSearchBar.tsx
+msgid "Recent activity"
+msgstr "Actividad reciente"
+
+#: packages/core/src/app/screens/VaultHome/VaultSearchBar.tsx
 msgid "Recently added"
 msgstr "Añadidos recientemente"
 
@@ -3125,6 +3219,7 @@ msgstr "Recargar"
 
 #: packages/core/src/app/entry-modes/attachments.tsx
 #: packages/core/src/app/screens/Settings/components/BackupSection.tsx
+#: packages/core/src/app/screens/Settings/components/BrowserUnlockKeysSection.tsx
 #: packages/core/src/app/screens/Settings/components/SyncConnectSection.tsx
 #: packages/core/src/app/screens/Settings/components/TapToUnlockSection.tsx
 msgid "Remove"
@@ -3140,6 +3235,10 @@ msgstr "Eliminar {0}"
 #: packages/core/src/app/screens/Settings/components/GeneralSection.tsx
 msgid "Remove {host} from never-save list"
 msgstr "Eliminar {host} de la lista de nunca guardar"
+
+#: packages/core/src/app/screens/Settings/components/BrowserUnlockKeysSection.tsx
+msgid "Remove {name}"
+msgstr "Eliminar {name}"
 
 #: packages/core/src/app/bulk-actions/tags.tsx
 msgid "Remove a tag"
@@ -3165,6 +3264,10 @@ msgstr "Quitar etiqueta"
 msgid "Remove tag {tag}"
 msgstr "Quitar la etiqueta {tag}"
 
+#: packages/core/src/app/screens/Settings/components/BrowserUnlockKeysSection.tsx
+msgid "Remove the key added {added}"
+msgstr "Eliminar la clave añadida {added}"
+
 #: packages/core/src/app/screens/Settings/components/CombineResult.tsx
 #~ msgid "Remove the old vault"
 #~ msgstr "Eliminar la bóveda antigua"
@@ -3181,6 +3284,7 @@ msgstr "Etiqueta {removed} eliminada. {0} etiquetas."
 #: packages/core/src/app/bulk-actions/tags.tsx
 #: packages/core/src/app/entry-modes/attachments.tsx
 #: packages/core/src/app/screens/Settings/components/BackupSection.tsx
+#: packages/core/src/app/screens/Settings/components/BrowserUnlockKeysSection.tsx
 #: packages/core/src/app/screens/Settings/components/TapToUnlockSection.tsx
 msgid "Removing…"
 msgstr "Quitando…"
@@ -3190,18 +3294,35 @@ msgstr "Quitando…"
 msgid "Rename {0}"
 msgstr "Renombrar {0}"
 
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Replace"
+msgstr "Reemplazar"
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Replace its code?"
+msgstr "¿Reemplazar su código?"
+
+#. placeholder {0}: target.name
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Replace the 2FA code in {0}"
+msgstr "Reemplazar el código 2FA en {0}"
+
 #. placeholder {0}: formatDateTimeExact(change.changedAt)
 #: packages/core/src/app/entry-modes/login.tsx
 msgid "Replaced {0}"
 msgstr "Reemplazada {0}"
 
 #: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
-msgid "Replaces code"
-msgstr "Reemplaza el código"
+#~ msgid "Replaces code"
+#~ msgstr "Reemplaza el código"
 
 #: packages/core/src/app/screens/Settings/components/RotateSecretSection.tsx
 msgid "Replaces the key everything in this vault is encrypted with. Worth doing if you believe a copy of the vault file has been exposed, since anything taken before cannot be opened with the new key."
 msgstr "Reemplaza la clave con la que se cifra todo en esta bóveda. Vale la pena hacerlo si cree que una copia del archivo de la bóveda ha quedado expuesta, ya que cualquier dato obtenido anteriormente no puede abrirse con la nueva clave."
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Replacing…"
+msgstr "Reemplazando…"
 
 #: packages/core/src/app/components/ReviewNudgeCard.tsx
 msgid "Report an issue"
@@ -3334,6 +3455,10 @@ msgstr "Guarde un archivo .kdbx que pueda abrir en KeePassXC o cualquier aplicac
 msgid "Save an encrypted .bramble copy of your vault. It still needs your master password to open."
 msgstr "Guarde una copia cifrada .bramble de su bóveda. Aún necesita su contraseña maestra para abrirla."
 
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+#~ msgid "Save as a new login"
+#~ msgstr "Guardar como nuevo inicio de sesión"
+
 #: packages/core/src/app/entry-modes/attachments.tsx
 msgid "Save attachment"
 msgstr "Guardar adjunto"
@@ -3343,8 +3468,16 @@ msgid "Save it somewhere safe and offline now. It's the only way back in if you 
 msgstr "Guárdelo en un lugar seguro y sin conexión ahora. Es la única forma de recuperarlo si olvida su contraseña maestra y pierde sus claves de seguridad, y nosotros no podemos recuperarlo por usted."
 
 #: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
-msgid "Save to a new login"
-msgstr "Guardar en un nuevo inicio de sesión"
+#~ msgid "Save it to"
+#~ msgstr "Guardar en"
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Save new login"
+msgstr "Guardar nuevo inicio de sesión"
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+#~ msgid "Save to a new login"
+#~ msgstr "Guardar en un nuevo inicio de sesión"
 
 #: packages/core/src/app/components/RecoveryCodeDisplay.tsx
 msgid "Save your recovery code"
@@ -3361,6 +3494,10 @@ msgstr "Guardada {0}"
 msgid "Saved {0} to {1}"
 msgstr "Guardado {0} en {1}"
 
+#: packages/core/src/app/routes/TotpSetupRoute.tsx
+msgid "Saved {name} with its 2FA code"
+msgstr "Se guardó {name} con su código 2FA"
+
 #. placeholder {0}: descriptor.label
 #: packages/core/src/app/screens/Settings/components/AliasSection.tsx
 msgid "Saved. {0} can only be checked by creating an alias."
@@ -3368,6 +3505,7 @@ msgstr "Guardado. {0} solo puede comprobarse creando un alias."
 
 #: packages/core/src/app/screens/CreateEntry/EntryForm.tsx
 #: packages/core/src/app/screens/Settings/components/MasterPasswordSection.tsx
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
 msgid "Saving…"
 msgstr "Guardando…"
 
@@ -3424,12 +3562,20 @@ msgid "Search #{importedTag} to find them."
 msgstr "Busque #{importedTag} para encontrarlos."
 
 #: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
-msgid "Search logins"
-msgstr "Buscar inicios de sesión"
+msgid "Search for the login to add the code to."
+msgstr "Busque el inicio de sesión al que añadir el código."
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+#~ msgid "Search logins"
+#~ msgstr "Buscar inicios de sesión"
 
 #: packages/core/src/app/screens/VaultHome/VaultSearchBar.tsx
 msgid "Search vault"
 msgstr "Buscar en la bóveda"
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Search your logins"
+msgstr "Buscar en sus inicios de sesión"
 
 #: packages/core/src/app/screens/Settings/components/BackupSection.tsx
 msgid "Secret access key"
@@ -3726,6 +3872,10 @@ msgstr "Fuerte"
 msgid "Subdomain match"
 msgstr "Coincidencia de subdominio"
 
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Suggested"
+msgstr "Sugeridos"
+
 #: packages/core/src/app/screens/Settings/components/SupportSection.tsx
 msgid "Support"
 msgstr "Apoyar"
@@ -3817,6 +3967,14 @@ msgstr "Teléfono"
 #: packages/core/src/app/screens/Settings/components/DesktopLinkSection.tsx
 #~ msgid "Test"
 #~ msgstr "Probar"
+
+#: packages/core/src/app/screens/Settings/components/BrowserUnlockKeysSection.tsx
+#~ msgid "That browser asks for its master password next time."
+#~ msgstr "Ese navegador pedirá su contraseña maestra la próxima vez."
+
+#: packages/core/src/app/screens/Settings/components/BrowserUnlockKeysSection.tsx
+msgid "That browser asks for its master password next time. Remove the key in that browser too."
+msgstr "Ese navegador pedirá su contraseña maestra la próxima vez. Elimine también la clave de ese navegador."
 
 #: packages/core/src/app/screens/Settings/components/AliasSection.tsx
 msgid "That does not look like a domain. Enter it on its own, like example.com, with no @ and no https://"
@@ -4294,9 +4452,25 @@ msgstr "Total de elementos"
 msgid "Touch ID"
 msgstr "Touch ID"
 
+#: packages/core/src/hooks/useVault.tsx
+#~ msgid "Touch ID changed. Set up Bramble Desktop unlock again."
+#~ msgstr "Touch ID ha cambiado. Vuelva a configurar el desbloqueo de Bramble Desktop."
+
+#: packages/core/src/app/screens/Settings/components/BrowserUnlockKeysSection.tsx
+msgid "Touch ID for your browser"
+msgstr "Touch ID para su navegador"
+
+#: packages/core/src/hooks/pending-passkey-toast.tsx
+msgid "Touch ID for your browser is set up"
+msgstr "Touch ID para su navegador está configurado"
+
 #: packages/core/src/app/screens/VaultSetup/components/JoinCard.tsx
 #~ msgid "Touch ID or Windows Hello"
 #~ msgstr "Touch ID o Windows Hello"
+
+#: packages/core/src/hooks/useVault.tsx
+#~ msgid "Touch ID was cancelled."
+#~ msgstr "Se canceló Touch ID."
 
 #: packages/core/src/app/components/SasDisplay.tsx
 msgid "Train"
@@ -4500,6 +4674,10 @@ msgstr "El desbloqueo cuenta como confirmar su identidad hasta que la bóveda se
 msgid "Unlocking…"
 msgstr "Desbloqueando…"
 
+#: packages/core/src/app/entry-modes/login.tsx
+msgid "Unlocks Bramble, so it isn't used to sign in"
+msgstr "Desbloquea Bramble, por lo que no se utiliza para iniciar sesión."
+
 #: packages/core/src/app/screens/Settings/components/SyncConnectSection.tsx
 msgid "Unnamed device"
 msgstr "Dispositivo sin nombre"
@@ -4620,6 +4798,7 @@ msgstr "Nombre de usuario"
 
 #: packages/core/src/app/entry-modes/login.tsx
 #: packages/core/src/app/screens/Settings/components/BackupSection.tsx
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
 msgid "Username"
 msgstr "Nombre de usuario"
 

@@ -16,7 +16,7 @@
 // BRAMBLE_VERIFY_CACHE (default ~/.cache/bramble-verify, about 6 GB). See
 // docs/reproducible-builds.md for why the platform matters and what each store changes.
 
-import { execFileSync, execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
 	existsSync,
@@ -266,17 +266,33 @@ async function releaseZip(tag: string, target: Target, version: string): Promise
 	return zipEntries(zip);
 }
 
+/** Unpack the tree `tag` points at into `dir`. No shell: the tag comes from the command line. */
+export function extractTag(repo: string, tag: string, dir: string): void {
+	let commit: string;
+	try {
+		commit = execFileSync(
+			"git",
+			["-C", repo, "rev-parse", "--verify", "--quiet", `${tag}^{commit}`],
+			{ encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+		).trim();
+	} catch {
+		throw new Error(`no tag ${tag} here; run git fetch --tags`);
+	}
+	const tar = `${dir}.tar`;
+	try {
+		execFileSync("git", ["-C", repo, "archive", "--format=tar", `--output=${tar}`, commit]);
+		execFileSync("tar", ["-x", "-f", tar, "-C", dir]);
+	} finally {
+		rmSync(tar, { force: true });
+	}
+}
+
 function rebuild(tag: string, target: Target, scratch: string): Files {
 	const src = join(scratch, "src");
 	const out = join(scratch, "out");
 	mkdirSync(src, { recursive: true });
 	mkdirSync(out, { recursive: true });
-	try {
-		execFileSync("git", ["-C", ROOT, "rev-parse", "--verify", "--quiet", `${tag}^{commit}`]);
-	} catch {
-		throw new Error(`no tag ${tag} here; run git fetch --tags`);
-	}
-	execSync(`git -C "${ROOT}" archive --format=tar "${tag}" | tar -x -C "${src}"`);
+	extractTag(ROOT, tag, src);
 	if (target === "android") return rebuildAndroid(src, out);
 
 	const dockerfile = readFileSync(join(ROOT, DOCKERFILE));
@@ -407,12 +423,7 @@ async function verifyDesktop(
 	const published = join(scratch, "published");
 	const manifests = join(scratch, "manifests");
 	for (const d of [src, out, published, manifests]) mkdirSync(d, { recursive: true });
-	try {
-		execFileSync("git", ["-C", ROOT, "rev-parse", "--verify", "--quiet", `${tag}^{commit}`]);
-	} catch {
-		throw new Error(`no tag ${tag} here; run git fetch --tags`);
-	}
-	execSync(`git -C "${ROOT}" archive --format=tar "${tag}" | tar -x -C "${src}"`);
+	extractTag(ROOT, tag, src);
 	const epoch = execFileSync("git", ["-C", ROOT, "log", "-1", "--format=%ct", tag], {
 		encoding: "utf8",
 	}).trim();
@@ -543,7 +554,7 @@ async function verifyDesktopMacos(tag: string, scratch: string): Promise<boolean
 	if (process.platform !== "darwin") throw new Error("--macos rebuilds on a Mac");
 	const src = join(scratch, "src");
 	mkdirSync(src, { recursive: true });
-	execSync(`git -C "${ROOT}" archive --format=tar "${tag}" | tar -x -C "${src}"`);
+	extractTag(ROOT, tag, src);
 	if (!existsSync(join(src, "scripts/canonical-path.ts")))
 		throw new Error(
 			`${tag} predates the canonical build path: its binaries carry the CI runner's own paths and cannot be rebuilt anywhere else`,
@@ -591,6 +602,14 @@ async function verifyDesktopMacos(tag: string, scratch: string): Promise<boolean
 			join(release, "bramble-proxy"),
 		],
 	];
+	// The AutoFill extension, from the release that first shipped it.
+	const autofill = "BrambleAutoFill.appex/Contents/MacOS/BrambleAutoFill";
+	if (existsSync(join(published, "Bramble.app/Contents/PlugIns", autofill)))
+		pairs.push([
+			"BrambleAutoFill",
+			join(published, "Bramble.app/Contents/PlugIns", autofill),
+			join(src, "clients/desktop/macos/build", autofill),
+		]);
 	let ok = true;
 	for (const [name, theirs, mine] of pairs) {
 		const unsigned = (file: string, as: string) => {
@@ -617,7 +636,7 @@ async function verifyDesktopWindows(
 ): Promise<boolean> {
 	const src = join(scratch, "src");
 	mkdirSync(src, { recursive: true });
-	execSync(`git -C "${ROOT}" archive --format=tar "${tag}" | tar -x -C "${src}"`);
+	extractTag(ROOT, tag, src);
 	if (!existsSync(join(src, "clients/desktop/docker/windows-build.Dockerfile")))
 		throw new Error(`${tag} predates the container build of the Windows installer`);
 	const epoch = execFileSync("git", ["-C", ROOT, "log", "-1", "--format=%ct", tag], {

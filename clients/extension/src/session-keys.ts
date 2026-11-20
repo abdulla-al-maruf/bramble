@@ -22,3 +22,7 @@ export const LAST_OPENED_VAULT_KEY = "vault.lastOpenedId";
  * dropped on lock. Shared here because more than one background concern has to see it.
  */
 export const CORNER_HANDOFF_KEY = "cornerPrompt.handoff";
+
+/** The browser window the pop-out was opened from, then the last one the user moved to while it is
+ * open (normal-window.ts). Firefox can't name it any other way once the pop-out has focus. */
+export const POPOUT_ANCHOR_KEY = "popout.anchorWindowId";

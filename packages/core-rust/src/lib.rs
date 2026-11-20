@@ -1228,6 +1228,15 @@ mod ffi_exports {
         crate::passkey::passkey_make_credential_core(&rp_id, user_verified)
     }
 
+    /// Mint the browser extension's unlock key, its id marked as held by Bramble.
+    #[cfg_attr(feature = "ffi", uniffi::export)]
+    pub fn passkey_make_unlock_credential(
+        rp_id: String,
+        user_verified: bool,
+    ) -> Result<crate::passkey::PasskeyRegistration, CryptoError> {
+        crate::passkey::passkey_make_unlock_credential_core(&rp_id, user_verified)
+    }
+
     /// Convert a standard-base64 PKCS#8 private key into stored key material plus its alg.
     #[cfg_attr(feature = "ffi", uniffi::export)]
     pub fn passkey_import_pkcs8(

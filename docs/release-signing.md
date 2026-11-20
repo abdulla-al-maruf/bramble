@@ -636,13 +636,24 @@ ships it as a plain file in `Contents/Helpers/bramble-proxy`, which Tauri copies
 (its `proxy-bin` feature is not passed to Tauri), so the sidecar is the only copy everywhere,
 Linux included. After bundling the script checks the profile, the app's entitlement, the helper's
 place and lack of entitlement, and a strict deep `codesign --verify`. The profile is the "Bramble Desktop Developer ID" profile for
-`BHGR3PP64J.app.bramble.desktop` (Developer ID, all devices, valid to 2044), kept out of git like
+`BHGR3PP64J.app.bramble.desktop` (Developer ID, all devices; it dies with the certificate, see
+[below](#certificate-and-profile-expiry)), kept out of git like
 every `*.provisionprofile`: locally at `clients/desktop/macos/profiles/Bramble.provisionprofile`,
 and in CI as the `desktop-release` environment secret `APPLE_PROVISIONING_PROFILE`, base64:
 
 ```sh
 base64 -i clients/desktop/macos/profiles/Bramble.provisionprofile \
   | gh secret set APPLE_PROVISIONING_PROFILE --env desktop-release
+```
+
+The AutoFill credential provider extension (docs/macos-credential-provider.md) is signed with its
+own profile, "Bramble Desktop AutoFill Developer ID" for `BHGR3PP64J.app.bramble.desktop.autofill`,
+locally at `clients/desktop/macos/profiles/BrambleAutoFill.provisionprofile` and in CI as
+`APPLE_AUTOFILL_PROVISIONING_PROFILE` (`pnpm fetch:profiles` pulls both):
+
+```sh
+base64 -i clients/desktop/macos/profiles/BrambleAutoFill.provisionprofile \
+  | gh secret set APPLE_AUTOFILL_PROVISIONING_PROFILE --env desktop-release
 ```
 
 The same profile also grants the App Group and AutoFill entitlements the planned credential
@@ -783,6 +794,27 @@ still through GitHub and its signer, and APT publishing at the end, all as befor
 Either way, the build refuses to run without the key rather than producing an unsigned archive,
 because an unsigned one is rejected by every installed app: the release would look complete while
 updating silently broke.
+
+### Certificate and profile expiry
+
+`pnpm build:macos` checks the Apple signing material before compiling and before any YubiKey
+prompt. It warns inside 30 days and fails once expired.
+
+**The certificate is what expires.** `Developer ID Application: Webvana Inc. (BHGR3PP64J)` runs to
+2027-02-01. Renew it at
+[developer.apple.com/account/resources/certificates](https://developer.apple.com/account/resources/certificates),
+then re-export it into the login keychain and the `APPLE_CERTIFICATE` secret.
+
+**A profile's own `ExpirationDate` is a red herring.** Developer ID profiles carry an 18-year TTL,
+so they claim 2044. What kills one is the certificate embedded in its `DeveloperCertificates`,
+which is also what App Store Connect reports as its expiry, so the check reads that. **Renewing the
+certificate invalidates every profile too**, because they still list the old one, and that looks
+exactly like expiry. After a renewal, regenerate each profile against the new certificate and
+replace both the local file and the CI secret.
+
+The certificate check is skipped when there is nothing to inspect: no `APPLE_SIGNING_IDENTITY` (an
+unsigned build) or `APPLE_CERTIFICATE` set (CI, where the certificate is not in a keychain). The
+profile check runs in CI too.
 
 ### Notarization
 

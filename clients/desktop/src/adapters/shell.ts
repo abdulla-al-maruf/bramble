@@ -31,6 +31,7 @@ import {
 	stopEnrollInvite,
 	stopSync,
 } from "../sync/transport";
+import { consumePendingPasskeys } from "./pending-passkeys";
 import { desktopStorage } from "./storage";
 import { streamInto } from "./stream";
 import { canSelfUpdate, desktopUpdates, resolveUpdatability } from "./updates";
@@ -70,6 +71,9 @@ export const desktopShell: ShellAdapter = {
 	openSetup: async (screen) => {
 		openSetupScreen?.(screen);
 	},
+
+	// Only macOS has the AutoFill extension that leaves passkeys behind.
+	...(/Macintosh|Mac OS X/.test(navigator.userAgent) ? { consumePendingPasskeys } : {}),
 
 	// The dialog plugin picks the path; the bytes go through our own command rather than
 	// the fs plugin, so there is no filesystem scope to configure and widen over time.

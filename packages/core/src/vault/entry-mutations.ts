@@ -354,6 +354,7 @@ export function createEntryMutations(deps: EntryMutationsDeps): EntryMutations {
 					iv: enc.iv,
 					hlc,
 					...next.causal.get(id),
+					...(data.type === "unlock-key" ? { localOnly: true as const } : {}),
 				};
 			}),
 		);

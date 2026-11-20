@@ -182,6 +182,7 @@ object VaultReader {
         val rpId = pk.optString("rpId", "")
         val privateKey = pk.optString("privateKey", "")
         if (credentialId.isEmpty() || rpId.isEmpty() || privateKey.isEmpty()) return null
+        if (PasskeyPolicy.isReservedRpId(rpId)) return null
         val prf = pk.optJSONObject("prf")
         val withUV = prf?.optString("credWithUV", "").orEmpty()
         val withoutUV = prf?.optString("credWithoutUV", "").orEmpty()

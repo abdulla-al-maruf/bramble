@@ -64,6 +64,9 @@ const FIREFOX_EXTENSION_ID: &str = "firefox@bramble.app";
 enum Schema {
     Chromium,
     Firefox,
+    /// Both keys in one file, for Orion, which runs Chrome and Firefox extensions alike.
+    #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+    Both,
 }
 
 /// Firefox's profile directory, which only answers "is Firefox installed", as the Chromium table
@@ -256,19 +259,19 @@ struct HostManifest {
 }
 
 fn manifest_for(proxy: &Path, schema: Schema) -> HostManifest {
+    // The trailing slash is not decoration: Chrome matches these as origins and silently ignores
+    // an entry without it.
+    let origins = || {
+        ALLOWED_EXTENSION_IDS
+            .iter()
+            .map(|id| format!("chrome-extension://{id}/"))
+            .collect()
+    };
+    let add_ons = || vec![FIREFOX_EXTENSION_ID.to_string()];
     let (allowed_origins, allowed_extensions) = match schema {
-        Schema::Chromium => (
-            Some(
-                ALLOWED_EXTENSION_IDS
-                    // The trailing slash is not decoration: Chrome matches these as origins and
-                    // silently ignores an entry without it.
-                    .iter()
-                    .map(|id| format!("chrome-extension://{id}/"))
-                    .collect(),
-            ),
-            None,
-        ),
-        Schema::Firefox => (None, Some(vec![FIREFOX_EXTENSION_ID.to_string()])),
+        Schema::Chromium => (Some(origins()), None),
+        Schema::Firefox => (None, Some(add_ons())),
+        Schema::Both => (Some(origins()), Some(add_ons())),
     };
     HostManifest {
         name: HOST_NAME.to_string(),
@@ -416,11 +419,52 @@ const FIREFOX_FAMILY: &[&str] = &[
     ".floorp",
 ];
 
-/// Whether Firefox is installed. On Linux that is any of `FIREFOX_FAMILY`, or `mozilla/firefox`
+/// Browsers on macOS that read Firefox's host manifests from `Mozilla/NativeMessagingHosts`: Firefox
+/// and the forks that keep its path, Zen and Floorp among them, and Orion, which reads Chrome's and
+/// Mozilla's as well as its own (#244). Relative to the home directory.
+#[cfg(target_os = "macos")]
+const FIREFOX_FAMILY: &[&str] = &[
+    FIREFOX_PROFILES,
+    "Library/Application Support/zen",
+    "Library/Application Support/Floorp",
+    "Library/Application Support/Waterfox",
+    ORION,
+];
+
+/// Orion's own directory, whose `NativeMessagingHosts` it reads first.
+#[cfg(target_os = "macos")]
+const ORION: &str = "Library/Application Support/Orion";
+
+/// Whether Firefox is installed: any of `FIREFOX_FAMILY`, and on Linux also `mozilla/firefox`
 /// under XDG_CONFIG_HOME for a profile Firefox created there.
 #[cfg(target_os = "macos")]
 fn firefox_present(home: &Path, _config: &Path) -> bool {
-    home.join(FIREFOX_PROFILES).is_dir()
+    FIREFOX_FAMILY.iter().any(|dir| home.join(dir).is_dir())
+}
+
+/// Orion's manifest, if Orion is installed, returning whether it was written. One file names both
+/// the Chrome extension and the Firefox add-on, since Orion runs either.
+#[cfg(target_os = "macos")]
+pub fn install_orion(home: &Path, proxy: &Path) -> bool {
+    let orion = home.join(ORION);
+    if !orion.is_dir() {
+        return false;
+    }
+    let hosts = orion.join("NativeMessagingHosts");
+    let written = fs::create_dir_all(&hosts).and_then(|()| {
+        write_manifest(
+            &hosts.join(format!("{HOST_NAME}.json")),
+            proxy,
+            Schema::Both,
+        )
+    });
+    match written {
+        Ok(()) => true,
+        Err(e) => {
+            log::warn!("native messaging manifest for Orion: {e}");
+            false
+        }
+    }
 }
 #[cfg(target_os = "linux")]
 fn firefox_present(home: &Path, config: &Path) -> bool {
@@ -535,7 +579,8 @@ pub fn install_firefox(roaming: &Path, data_dir: &Path, proxy: &Path) -> bool {
 }
 
 /// Refresh every manifest against the running binary's location. Called at startup, which is
-/// what keeps them correct across an app update or the app being moved.
+/// what keeps them correct across an app update or the app being moved, and again when the user
+/// starts linking a browser, for one installed since or a manifest removed while the app ran (#218).
 pub fn refresh() {
     #[cfg(not(any(target_os = "macos", target_os = "linux", windows)))]
     {
@@ -554,11 +599,14 @@ pub fn refresh() {
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         let installed = {
             let mut installed = install_all(&root, &proxy);
-            match std::env::var_os("HOME") {
-                Some(home) if install_firefox(Path::new(&home), &root, &proxy) => {
-                    installed.push("Firefox")
+            if let Some(home) = std::env::var_os("HOME") {
+                if install_firefox(Path::new(&home), &root, &proxy) {
+                    installed.push("Firefox");
                 }
-                _ => {}
+                #[cfg(target_os = "macos")]
+                if install_orion(Path::new(&home), &proxy) {
+                    installed.push("Orion");
+                }
             }
             installed
         };
@@ -1060,6 +1108,48 @@ mod tests {
                 "/tmp/bramble-proxy"
             );
         }
+    }
+
+    #[test]
+    #[cfg(target_os = "macos")]
+    fn zen_floorp_or_orion_alone_still_get_the_mozilla_manifest() {
+        for dir in [
+            "Library/Application Support/zen",
+            "Library/Application Support/Floorp",
+            ORION,
+        ] {
+            let home = root_with(&[dir]);
+            assert!(
+                install_firefox(home.path(), home.path(), Path::new("/tmp/bramble-proxy")),
+                "{dir}"
+            );
+            assert_eq!(
+                read_firefox_manifest(home.path())["allowed_extensions"][0],
+                FIREFOX_EXTENSION_ID
+            );
+        }
+    }
+
+    #[test]
+    #[cfg(target_os = "macos")]
+    fn orion_gets_one_manifest_for_both_kinds_of_extension() {
+        let home = root_with(&[ORION]);
+        assert!(install_orion(home.path(), Path::new("/tmp/bramble-proxy")));
+        let m = read_manifest(home.path(), ORION);
+        assert_eq!(m["path"], "/tmp/bramble-proxy");
+        assert_eq!(m["allowed_extensions"][0], FIREFOX_EXTENSION_ID);
+        assert_eq!(
+            m["allowed_origins"][0],
+            format!("chrome-extension://{}/", ALLOWED_EXTENSION_IDS[0])
+        );
+    }
+
+    #[test]
+    #[cfg(target_os = "macos")]
+    fn no_orion_means_no_orion_manifest() {
+        let home = tempfile::tempdir().unwrap();
+        assert!(!install_orion(home.path(), Path::new("/tmp/bramble-proxy")));
+        assert!(!home.path().join(ORION).exists());
     }
 
     #[test]

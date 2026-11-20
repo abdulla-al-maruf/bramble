@@ -63,7 +63,7 @@ msgstr "{0, plural, one {백업되지 않음: 첨부 파일 #개가 아직 이 �
 msgid "{0, plural, one {This backup has # attachment, which Bramble can't store on this device yet. Keep the backup file, which still has it.} other {This backup has # attachments, which Bramble can't store on this device yet. Keep the backup file, which still has them.}}"
 msgstr "{0, plural, one {이 백업에는 Bramble이 아직 이 기기에 저장할 수 없는 첨부 파일 #개가 있습니다. 해당 파일이 계속 들어 있는 백업 파일을 보관하세요.} other {이 백업에는 Bramble이 아직 이 기기에 저장할 수 없는 첨부 파일 #개가 있습니다. 해당 파일이 계속 들어 있는 백업 파일을 보관하세요.}}"
 
-#. placeholder {0}: fingerprint(d.publicKey)
+#. placeholder {0}: shortKey(d.publicKey)
 #. placeholder {1}: addedOn(d.addedAt)
 #: packages/core/src/app/screens/Settings/components/SyncConnectSection.tsx
 msgid "{0} · added {1}"
@@ -185,7 +185,7 @@ msgstr "{passwordDiffers}개는 이미 보유한 항목과 사이트와 사용�
 msgid "{quarantined, plural, one {# damaged entry stayed in the old vault.} other {# damaged entries stayed in the old vault.}}"
 msgstr "{quarantined, plural, one {손상된 항목 #개가 이전 보관함에 남았습니다.} other {손상된 항목 #개가 이전 보관함에 남았습니다.}}"
 
-#: packages/core/src/app/entry-modes/login.tsx
+#: packages/core/src/app/components/TotpCode.tsx
 msgid "{remaining}s left"
 msgstr "{remaining}초 남음"
 
@@ -225,6 +225,15 @@ msgstr "15분"
 #: packages/core/src/app/screens/Settings/components/GeneralSection.tsx
 msgid "2 minutes"
 msgstr "2분"
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "2FA code"
+msgstr "2FA 코드"
+
+#. placeholder {0}: entry.name
+#: packages/core/src/app/routes/TotpSetupRoute.tsx
+msgid "2FA code added to {0}"
+msgstr "2FA 코드가 {0}에 추가됨"
 
 #: packages/core/src/app/screens/Settings/components/GeneralSection.tsx
 msgid "30 minutes"
@@ -284,8 +293,13 @@ msgid "Actions"
 msgstr "작업"
 
 #: packages/core/src/app/screens/Settings/components/TapToUnlockSection.tsx
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
 msgid "Add"
 msgstr "추가"
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Add 2FA code"
+msgstr "2FA 코드 추가"
 
 #: packages/core/src/app/screens/Settings/components/BackupSection.tsx
 msgid "Add a backup target"
@@ -294,6 +308,10 @@ msgstr "백업 대상 추가"
 #: packages/core/src/app/screens/Settings/components/SyncConnectSection.tsx
 msgid "Add a device"
 msgstr "기기 추가"
+
+#: packages/core/src/app/screens/Settings/components/MasterPasswordSection.tsx
+msgid "Add a key outside Bramble Desktop before you can turn off the master password."
+msgstr "마스터 비밀번호를 끄려면 먼저 Bramble Desktop 외부에서 키를 추가해야 합니다."
 
 #: packages/core/src/app/screens/Settings/components/MasterPasswordSection.tsx
 msgid "Add a key under Tap to unlock before you can turn off the master password."
@@ -336,6 +354,11 @@ msgstr "새로 추가"
 msgid "Add tag"
 msgstr "태그 추가"
 
+#. placeholder {0}: target.name
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Add the 2FA code to {0}"
+msgstr "2FA 코드를 {0}에 추가"
+
 #: packages/core/src/app/screens/Settings/components/DesktopLinkSection.tsx
 msgid "Add the desktop's vault"
 msgstr "데스크톱의 저장소 추가"
@@ -347,6 +370,10 @@ msgstr "이 로그인이 적용되는 웹사이트를 추가하세요. 사이트
 #: packages/core/src/app/entry-modes/login.tsx
 msgid "Add URL"
 msgstr "URL 추가"
+
+#: packages/core/src/app/screens/Settings/components/BrowserUnlockKeysSection.tsx
+msgid "Added {added}"
+msgstr "{added} 추가됨"
 
 #. placeholder {0}: next.length
 #: packages/core/src/app/entry-modes/tags.tsx
@@ -360,6 +387,10 @@ msgstr "Bramble을 사용해 사이트에서 패스키를 생성하면 추가됩
 #: packages/core/src/app/screens/Settings/components/SyncConnectSection.tsx
 msgid "Adding a device needs a master password"
 msgstr "기기를 추가하려면 마스터 비밀번호가 필요합니다."
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Adding…"
+msgstr "추가하는 중…"
 
 #: packages/core/src/app/screens/Settings/components/TwoVaultsPrompt.tsx
 msgid "Adds {desktopName} next to {browserName}. Switch between them from the vault menu."
@@ -526,8 +557,8 @@ msgid "Attachments ready to add to entries you already have"
 msgstr "기존 항목에 추가할 수 있는 첨부 파일"
 
 #: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
-msgid "Authenticator key"
-msgstr "인증자 키"
+#~ msgid "Authenticator key"
+#~ msgstr "인증자 키"
 
 #: packages/core/src/app/entry-modes/login.tsx
 msgid "Authenticator key (TOTP)"
@@ -654,6 +685,14 @@ msgstr "Bramble이 지금 이 보관함을 열 수 없습니다. 이슈 트래�
 msgid "Bramble couldn't safely update this device's key storage, so the vault stayed locked. Try again."
 msgstr "Bramble이 이 기기의 키 저장소를 안전하게 업데이트하지 못해 보관함이 잠긴 상태로 유지되었습니다. 다시 시도하세요."
 
+#: packages/core/src/hooks/useVault.tsx
+#~ msgid "Bramble Desktop didn't answer. Open it and try again, or use your master password."
+#~ msgstr "Bramble Desktop이 응답하지 않았습니다. 앱을 열고 다시 시도하거나 마스터 비밀번호를 사용하십시오."
+
+#: packages/core/src/app/screens/Settings/components/MasterPasswordSection.tsx
+#~ msgid "Bramble Desktop holds your Touch ID key, so the master password stays on."
+#~ msgstr "Bramble Desktop이 Touch ID 키를 보관하므로 마스터 비밀번호가 계속 활성화되어 있습니다."
+
 #: packages/core/src/app/ErrorBoundary.tsx
 msgid "Bramble hit an unexpected error. Your vault is safe — it stays encrypted on this device. Try reloading; if it keeps happening, reopen the app."
 msgstr "Bramble에 예기치 않은 오류가 발생했습니다. 보관함은 안전하며 이 기기에서 암호화된 상태로 유지됩니다. 새로 고침해 보고, 계속 발생하면 앱을 다시 여세요."
@@ -691,6 +730,10 @@ msgstr "Bramble은 업로드와 목록 조회만 필요합니다. 키를 이 버
 #: packages/core/src/app/screens/Settings/components/UpdatesSection.tsx
 msgid "Bramble restarts by itself once this finishes."
 msgstr "이 작업이 끝나면 Bramble이 자동으로 다시 시작됩니다."
+
+#: packages/core/src/app/screens/Settings/components/BrowserUnlockKeysSection.tsx
+msgid "Bramble unlocks the browser extension when you use Touch ID there."
+msgstr "Bramble은 해당 브라우저에서 Touch ID를 사용하면 브라우저 확장 프로그램을 잠금 해제합니다."
 
 #: packages/core/src/app/screens/Settings/components/BackupSection.tsx
 msgid "Bramble will never delete anything here, so this can use a credential that isn't allowed to. One that's stolen then can't destroy your backup history."
@@ -866,8 +909,8 @@ msgid "Choose the vault these items should go into"
 msgstr "이 항목들을 넣을 보관함 선택"
 
 #: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
-msgid "Choose where to save this 2FA code."
-msgstr "이 2FA 코드를 저장할 위치를 선택하십시오."
+#~ msgid "Choose where to save this 2FA code."
+#~ msgstr "이 2FA 코드를 저장할 위치를 선택하십시오."
 
 #: packages/core/src/app/screens/Settings/components/BackupSection.tsx
 msgid "Choose where to store encrypted backups. Bramble only ever uploads ciphertext, so your provider can't read anything in your vault. Add as many as you like."
@@ -1128,7 +1171,7 @@ msgstr "이전 비밀번호 복사"
 msgid "Copy them anyway"
 msgstr "그래도 복사"
 
-#: packages/core/src/app/entry-modes/login.tsx
+#: packages/core/src/app/components/TotpCode.tsx
 msgid "Copy verification code"
 msgstr "인증 코드 복사"
 
@@ -1181,6 +1224,10 @@ msgstr "이 파일을 읽을 수 없습니다."
 #: packages/core/src/app/screens/Restore/RestoreShell.tsx
 msgid "Couldn't restore this backup."
 msgstr "이 백업을 복원할 수 없습니다."
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Couldn't save the 2FA code. Try again."
+msgstr "2FA 코드를 저장하지 못했습니다. 다시 시도해 주세요."
 
 #: packages/core/src/hooks/useVault.tsx
 msgid "Couldn't save the master password. Please try again."
@@ -1262,6 +1309,10 @@ msgstr "생성 중…"
 #: packages/core/src/app/entry-modes/card.tsx
 msgid "Credit or debit card"
 msgstr "신용카드 또는 체크카드"
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Current code"
+msgstr "현재 코드"
 
 #: packages/core/src/app/screens/Settings/components/MasterPasswordSection.tsx
 msgid "Current password"
@@ -1576,6 +1627,10 @@ msgstr "이 파일의 모든 내용은 이미 보관함에 있으므로 가져�
 msgid "Exact hostname (and port, if the URL has one)"
 msgstr "정확한 호스트 이름(URL에 포트가 있으면 포트 포함)"
 
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Existing login"
+msgstr "기존 로그인"
+
 #: packages/core/src/app/entry-modes/tags.tsx
 msgid "Existing tags"
 msgstr "기존 태그"
@@ -1659,6 +1714,10 @@ msgstr "파일은 이 기기에서만 읽습니다. 아무것도 업로드되지
 #: packages/core/src/app/entry-modes/attachments.tsx
 msgid "Files over {LIMIT_MB} MB can't be attached."
 msgstr "{LIMIT_MB}MB를 초과하는 파일은 첨부할 수 없습니다."
+
+#: packages/core/src/app/components/EntryRow.tsx
+msgid "Fill"
+msgstr "채우기"
 
 #: packages/core/src/app/screens/VaultHome/VaultSearchBar.tsx
 msgid "Filter by type"
@@ -1853,6 +1912,10 @@ msgstr "저장했습니다"
 msgid "I've saved it, continue"
 msgstr "저장했습니다. 계속하십시오"
 
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "If the site asks for a code to finish setting up, enter this one."
+msgstr "설정을 완료하기 위해 사이트에서 코드를 요청하면 이 코드를 입력하세요."
+
 #: packages/core/src/app/screens/VaultSetup/VaultSetup.tsx
 msgid "If they differ, someone else is trying to join. Reject it there and start again with a new code."
 msgstr "코드가 일치하지 않으면 다른 사람이 연결을 시도하는 중입니다. 해당 기기에서 거부하고 새 코드로 다시 시작하십시오."
@@ -1897,6 +1960,10 @@ msgstr "가져온 항목 {imported}개"
 #: packages/core/src/app/screens/Import/ImportShell.tsx
 msgid "Importing…"
 msgstr "가져오는 중…"
+
+#: packages/core/src/app/screens/Settings/components/TapToUnlockSection.tsx
+msgid "in Bramble Desktop"
+msgstr "Bramble Desktop에서"
 
 #: packages/core/src/app/screens/Settings/components/BrowserPairingSection.tsx
 msgid "In the Bramble extension, press Link on the first screen, or open Settings → Desktop app. Both screens will then show the same symbols."
@@ -2127,6 +2194,10 @@ msgstr "전구"
 msgid "Link"
 msgstr "연결"
 
+#: packages/core/src/hooks/useVault.tsx
+#~ msgid "Link Bramble Desktop first."
+#~ msgstr "먼저 Bramble Desktop을 연결하십시오."
+
 #: packages/core/src/app/screens/VaultSetup/components/DesktopLinkBanner.tsx
 msgid "Link it instead of making a new vault."
 msgstr "새 보관함을 만드는 대신 연결하세요."
@@ -2180,8 +2251,10 @@ msgstr "잠김"
 msgid "Login"
 msgstr "로그인"
 
+#. placeholder {0}: data.name
 #. placeholder {0}: info.hostname
 #: packages/core/src/app/components/CornerSavedToast.tsx
+#: packages/core/src/hooks/usePendingHandoffs.tsx
 msgid "Login saved for {0}"
 msgstr "{0} 로그인 저장됨"
 
@@ -2256,6 +2329,7 @@ msgstr "버섯"
 #: packages/core/src/app/entry-modes/card.tsx
 #: packages/core/src/app/entry-modes/login.tsx
 #: packages/core/src/app/entry-modes/ssh-key.tsx
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
 msgid "Name"
 msgstr "이름"
 
@@ -2274,6 +2348,10 @@ msgstr "이름 Z-A"
 #: packages/core/src/app/screens/CreateEntry/EntryForm.tsx
 msgid "New {modeLabel}"
 msgstr "새 {modeLabel}"
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "New login"
+msgstr "새 로그인"
 
 #: packages/core/src/app/screens/Settings/components/MasterPasswordSection.tsx
 msgid "New password"
@@ -2299,6 +2377,10 @@ msgstr "이 파일에서 가져올 수 있는 항목이 없습니다."
 #: packages/core/src/app/screens/VaultHome/VaultHome.tsx
 msgid "No items found matching your search."
 msgstr "검색어와 일치하는 항목이 없습니다."
+
+#: packages/core/src/app/routes/VaultHomeRoute.tsx
+msgid "No login form on this page"
+msgstr "이 페이지에 로그인 양식이 없습니다."
 
 #: packages/core/src/app/screens/VaultHome/VaultHome.tsx
 msgid "No logins at risk."
@@ -2533,8 +2615,8 @@ msgid "Optional (e.g. Work)"
 msgstr "선택 사항(예: 업무)"
 
 #: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
-msgid "Or add it to an existing login"
-msgstr "또는 기존 로그인에 추가"
+#~ msgid "Or add it to an existing login"
+#~ msgstr "또는 기존 로그인에 추가"
 
 #: packages/core/src/app/components/ReviewNudgeCard.tsx
 msgid "Or something honest, either works. Reviews are how people find Bramble."
@@ -2582,8 +2664,12 @@ msgid "Passkey added to {0}"
 msgstr "패스키가 {0}에 추가되었습니다"
 
 #: packages/core/src/hooks/usePendingHandoffs.tsx
-msgid "Passkey added to {loginName}"
-msgstr "패스키가 {loginName}에 추가되었습니다"
+#~ msgid "Passkey added to {loginName}"
+#~ msgstr "패스키가 {loginName}에 추가되었습니다"
+
+#: packages/core/src/hooks/pending-passkey-toast.tsx
+msgid "Passkey added to {name}"
+msgstr "패스키가 {name}에 추가됨"
 
 #. placeholder {0}: info.loginName
 #: packages/core/src/app/components/PasskeySavedToast.tsx
@@ -2591,8 +2677,12 @@ msgid "Passkey saved as {0}"
 msgstr "패스키가 {0}(으)로 저장되었습니다"
 
 #: packages/core/src/hooks/usePendingHandoffs.tsx
-msgid "Passkey saved as {loginName}"
-msgstr "패스키가 {loginName}(으)로 저장되었습니다"
+#~ msgid "Passkey saved as {loginName}"
+#~ msgstr "패스키가 {loginName}(으)로 저장되었습니다"
+
+#: packages/core/src/hooks/pending-passkey-toast.tsx
+msgid "Passkey saved as {name}"
+msgstr "패스키가 {name} 이름으로 저장됨"
 
 #: packages/core/src/app/entry-modes/login.tsx
 msgid "Passkeys"
@@ -2778,6 +2868,10 @@ msgid "Reading file…"
 msgstr "파일 읽는 중…"
 
 #: packages/core/src/app/screens/VaultHome/VaultSearchBar.tsx
+msgid "Recent activity"
+msgstr "최근 활동"
+
+#: packages/core/src/app/screens/VaultHome/VaultSearchBar.tsx
 msgid "Recently added"
 msgstr "최근 추가됨"
 
@@ -2820,6 +2914,7 @@ msgstr "다시 불러오기"
 
 #: packages/core/src/app/entry-modes/attachments.tsx
 #: packages/core/src/app/screens/Settings/components/BackupSection.tsx
+#: packages/core/src/app/screens/Settings/components/BrowserUnlockKeysSection.tsx
 #: packages/core/src/app/screens/Settings/components/SyncConnectSection.tsx
 #: packages/core/src/app/screens/Settings/components/TapToUnlockSection.tsx
 msgid "Remove"
@@ -2835,6 +2930,10 @@ msgstr "{0} 제거"
 #: packages/core/src/app/screens/Settings/components/GeneralSection.tsx
 msgid "Remove {host} from never-save list"
 msgstr "저장 안 함 목록에서 {host} 제거"
+
+#: packages/core/src/app/screens/Settings/components/BrowserUnlockKeysSection.tsx
+msgid "Remove {name}"
+msgstr "{name} 제거"
 
 #: packages/core/src/app/bulk-actions/tags.tsx
 msgid "Remove a tag"
@@ -2860,6 +2959,10 @@ msgstr "태그 제거"
 msgid "Remove tag {tag}"
 msgstr "태그 {tag} 제거"
 
+#: packages/core/src/app/screens/Settings/components/BrowserUnlockKeysSection.tsx
+msgid "Remove the key added {added}"
+msgstr "추가된 키({added}) 제거"
+
 #: packages/core/src/app/entry-modes/login.tsx
 msgid "Remove URL"
 msgstr "URL 제거"
@@ -2872,6 +2975,7 @@ msgstr "{removed} 태그를 제거했습니다. {0}개 태그."
 #: packages/core/src/app/bulk-actions/tags.tsx
 #: packages/core/src/app/entry-modes/attachments.tsx
 #: packages/core/src/app/screens/Settings/components/BackupSection.tsx
+#: packages/core/src/app/screens/Settings/components/BrowserUnlockKeysSection.tsx
 #: packages/core/src/app/screens/Settings/components/TapToUnlockSection.tsx
 msgid "Removing…"
 msgstr "제거 중…"
@@ -2881,18 +2985,35 @@ msgstr "제거 중…"
 msgid "Rename {0}"
 msgstr "{0} 이름 변경"
 
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Replace"
+msgstr "교체"
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Replace its code?"
+msgstr "코드를 교체하시겠습니까?"
+
+#. placeholder {0}: target.name
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Replace the 2FA code in {0}"
+msgstr "{0}의 2FA 코드 교체"
+
 #. placeholder {0}: formatDateTimeExact(change.changedAt)
 #: packages/core/src/app/entry-modes/login.tsx
 msgid "Replaced {0}"
 msgstr "{0} 대체됨"
 
 #: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
-msgid "Replaces code"
-msgstr "코드 대체"
+#~ msgid "Replaces code"
+#~ msgstr "코드 대체"
 
 #: packages/core/src/app/screens/Settings/components/RotateSecretSection.tsx
 msgid "Replaces the key everything in this vault is encrypted with. Worth doing if you believe a copy of the vault file has been exposed, since anything taken before cannot be opened with the new key."
 msgstr "이 저장소의 모든 것을 암호화하는 키를 대체합니다. 저장소 파일의 사본이 노출되었다고 생각된다면 그렇게 할 가치가 있습니다. 이전에 탈취된 어떤 항목도 새 키로는 열 수 없기 때문입니다."
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Replacing…"
+msgstr "교체하는 중…"
 
 #: packages/core/src/app/components/ReviewNudgeCard.tsx
 msgid "Report an issue"
@@ -3017,6 +3138,10 @@ msgstr "KeePassXC 또는 모든 KeePass 앱에서 열 수 있는 .kdbx 파일을
 msgid "Save an encrypted .bramble copy of your vault. It still needs your master password to open."
 msgstr "볼트의 암호화된 .bramble 사본을 저장합니다. 열려면 마스터 비밀번호가 여전히 필요합니다."
 
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+#~ msgid "Save as a new login"
+#~ msgstr "새 로그인으로 저장"
+
 #: packages/core/src/app/entry-modes/attachments.tsx
 msgid "Save attachment"
 msgstr "첨부 파일 저장"
@@ -3026,8 +3151,16 @@ msgid "Save it somewhere safe and offline now. It's the only way back in if you 
 msgstr "지금 안전한 오프라인 위치에 저장하세요. 마스터 비밀번호를 잊고 보안 키를 분실한 경우 다시 들어올 수 있는 유일한 방법이며, 저희가 대신 복구해 드릴 수 없습니다."
 
 #: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
-msgid "Save to a new login"
-msgstr "새 로그인에 저장"
+#~ msgid "Save it to"
+#~ msgstr "저장 위치"
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Save new login"
+msgstr "새 로그인 저장"
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+#~ msgid "Save to a new login"
+#~ msgstr "새 로그인에 저장"
 
 #: packages/core/src/app/components/RecoveryCodeDisplay.tsx
 msgid "Save your recovery code"
@@ -3044,6 +3177,10 @@ msgstr "{0} 저장됨"
 msgid "Saved {0} to {1}"
 msgstr "{0}을(를) {1}에 저장했습니다."
 
+#: packages/core/src/app/routes/TotpSetupRoute.tsx
+msgid "Saved {name} with its 2FA code"
+msgstr "{name}을(를) 2FA 코드와 함께 저장했습니다."
+
 #. placeholder {0}: descriptor.label
 #: packages/core/src/app/screens/Settings/components/AliasSection.tsx
 msgid "Saved. {0} can only be checked by creating an alias."
@@ -3051,6 +3188,7 @@ msgstr "저장했습니다. {0}은(는) 별칭을 생성해야만 확인할 수 
 
 #: packages/core/src/app/screens/CreateEntry/EntryForm.tsx
 #: packages/core/src/app/screens/Settings/components/MasterPasswordSection.tsx
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
 msgid "Saving…"
 msgstr "저장 중…"
 
@@ -3107,12 +3245,20 @@ msgid "Search #{importedTag} to find them."
 msgstr "가져온 항목을 찾으려면 #{importedTag} 태그를 검색하세요."
 
 #: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
-msgid "Search logins"
-msgstr "로그인 항목 검색"
+msgid "Search for the login to add the code to."
+msgstr "코드를 추가할 로그인을 검색하세요."
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+#~ msgid "Search logins"
+#~ msgstr "로그인 항목 검색"
 
 #: packages/core/src/app/screens/VaultHome/VaultSearchBar.tsx
 msgid "Search vault"
 msgstr "보관함 검색"
+
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Search your logins"
+msgstr "로그인 검색"
 
 #: packages/core/src/app/screens/Settings/components/BackupSection.tsx
 msgid "Secret access key"
@@ -3389,6 +3535,10 @@ msgstr "강함"
 msgid "Subdomain match"
 msgstr "하위 도메인 일치"
 
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
+msgid "Suggested"
+msgstr "추천"
+
 #: packages/core/src/app/screens/Settings/components/SupportSection.tsx
 msgid "Support"
 msgstr "지원"
@@ -3472,6 +3622,14 @@ msgstr "탭하여 잠금 해제 키는 이 보관함에서 제거되며 다시 �
 #: packages/core/src/app/components/SasDisplay.tsx
 msgid "Telephone"
 msgstr "전화"
+
+#: packages/core/src/app/screens/Settings/components/BrowserUnlockKeysSection.tsx
+#~ msgid "That browser asks for its master password next time."
+#~ msgstr "해당 브라우저는 다음에 마스터 비밀번호를 요청합니다."
+
+#: packages/core/src/app/screens/Settings/components/BrowserUnlockKeysSection.tsx
+msgid "That browser asks for its master password next time. Remove the key in that browser too."
+msgstr "해당 브라우저는 다음에 마스터 비밀번호를 요청합니다. 해당 브라우저에서 키도 제거하십시오."
 
 #: packages/core/src/app/screens/Settings/components/AliasSection.tsx
 msgid "That does not look like a domain. Enter it on its own, like example.com, with no @ and no https://"
@@ -3872,6 +4030,22 @@ msgstr "총 항목"
 msgid "Touch ID"
 msgstr "Touch ID"
 
+#: packages/core/src/hooks/useVault.tsx
+#~ msgid "Touch ID changed. Set up Bramble Desktop unlock again."
+#~ msgstr "Touch ID가 변경되었습니다. Bramble Desktop 잠금 해제를 다시 설정하십시오."
+
+#: packages/core/src/app/screens/Settings/components/BrowserUnlockKeysSection.tsx
+msgid "Touch ID for your browser"
+msgstr "브라우저용 Touch ID"
+
+#: packages/core/src/hooks/pending-passkey-toast.tsx
+msgid "Touch ID for your browser is set up"
+msgstr "브라우저용 Touch ID가 설정됨"
+
+#: packages/core/src/hooks/useVault.tsx
+#~ msgid "Touch ID was cancelled."
+#~ msgstr "Touch ID가 취소되었습니다."
+
 #: packages/core/src/app/components/SasDisplay.tsx
 msgid "Train"
 msgstr "기차"
@@ -4054,6 +4228,10 @@ msgstr "잠금 해제는 보관함이 잠길 때까지 본인 확인으로 간�
 msgid "Unlocking…"
 msgstr "잠금 해제 중…"
 
+#: packages/core/src/app/entry-modes/login.tsx
+msgid "Unlocks Bramble, so it isn't used to sign in"
+msgstr "Bramble의 잠금을 해제하며 로그인에는 사용되지 않습니다"
+
 #: packages/core/src/app/screens/Settings/components/SyncConnectSection.tsx
 msgid "Unnamed device"
 msgstr "이름 없는 기기"
@@ -4170,6 +4348,7 @@ msgstr "사용자 이름"
 
 #: packages/core/src/app/entry-modes/login.tsx
 #: packages/core/src/app/screens/Settings/components/BackupSection.tsx
+#: packages/core/src/app/screens/TotpSetup/TotpSetup.tsx
 msgid "Username"
 msgstr "사용자 이름"
 

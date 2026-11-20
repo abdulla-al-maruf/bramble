@@ -6,6 +6,7 @@
 import type { IndexEntry } from "../adapters/autofill";
 import type { CardEntry, CustomField, Entry, LoginEntry } from "../hooks/useVault";
 import { withScheme } from "../util/url";
+import { isReservedRpId } from "./reserved-rp";
 
 // Schemes that identify a mobile app, not a website. Bramble never writes these,
 // but importers carry them straight through: `androidapp://` is Bitwarden's
@@ -99,8 +100,13 @@ function loginIndexEntry(entry: LoginEntry): IndexEntry {
 		autofillEnabled: entry.autofillEnabled,
 		autoSubmit: entry.autoSubmit,
 		subdomainMatch: entry.subdomainMatch,
-		passkeys: entry.passkeys?.length ? entry.passkeys : undefined,
+		passkeys: servedPasskeys(entry),
 	};
+}
+
+function servedPasskeys(entry: LoginEntry): LoginEntry["passkeys"] {
+	const served = entry.passkeys?.filter((p) => !isReservedRpId(p.rpId));
+	return served?.length ? served : undefined;
 }
 
 function cardIndexEntry(entry: CardEntry): IndexEntry {
@@ -133,6 +139,8 @@ export function toAutofillIndex(entries: Entry[]): IndexEntry[] {
 		if (entry.archivedAt !== undefined) continue;
 		if (entry.type === "login") out.push(loginIndexEntry(entry));
 		else if (entry.type === "card") out.push(cardIndexEntry(entry));
+		else if (entry.type === "unlock-key")
+			out.push({ type: "unlock-key", id: entry.id, passkey: entry.passkey });
 	}
 	return out;
 }

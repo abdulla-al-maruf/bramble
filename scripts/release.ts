@@ -75,6 +75,7 @@ import { ASC_KEY_AGE } from "./asc-api-key.ts";
 import { CWS_ITEM_ID } from "./cws-ids.ts";
 import { signingKey } from "./desktop-signing-key.ts";
 import { commitOverReleases, createTag } from "./github-commit.ts";
+import { macosHandoff } from "./macos-handoff.ts";
 import { composeNotes } from "./release-notes.mjs";
 import { watchDesktopRelease } from "./release-watch.ts";
 import { isUpdaterArtifact, logToSigsum } from "./sigsum-log.ts";
@@ -1661,24 +1662,6 @@ function runnerPrepareDesktop(version: string): void {
 }
 
 /**
- * What the macOS job hands the publish job: the lipo'd app binary, and the proxy in both places a
- * universal build needs it (stage-proxy.mjs explains why there are two). Relative to src-tauri.
- * A function rather than a module constant, because the dispatch at the top of this file runs
- * before anything declared down here exists.
- */
-function macosHandoff(): { root: string; tarball: string; files: string[] } {
-	return {
-		root: "clients/desktop/src-tauri",
-		tarball: join(HANDOFF, "macos-universal.tar"),
-		files: [
-			"target/universal-apple-darwin/release/bramble-desktop",
-			"target/universal-apple-darwin/release/bramble-proxy",
-			"binaries/bramble-proxy-universal-apple-darwin",
-		],
-	};
-}
-
-/**
  * `--runner-compile`, the macOS job. Compiles both slices with no secret in the job at all, which
  * is the point: every crate's build script and proc macro runs here, and only packaging and
  * signing run beside the keys. Packed as a tarball because artifacts drop the executable bit.
@@ -1688,7 +1671,7 @@ function runnerCompileMacos(version: string): void {
 	runnerPrepareDesktop(version);
 	// At the canonical path, so anyone can rebuild these bytes (build-macos.ts, CANONICAL).
 	run("node scripts/build-macos.ts --compile-only --canonical");
-	const { root, tarball, files } = macosHandoff();
+	const { root, tarball, files } = macosHandoff(HANDOFF);
 	mkdirSync(dirname(tarball), { recursive: true });
 	execFileSync("tar", ["-cf", tarball, "-C", root, ...files], { stdio: "inherit" });
 	console.log(`\n${version} compiled for both Apple slices; handed over as ${tarball}`);
@@ -1700,10 +1683,10 @@ function runnerCompileMacos(version: string): void {
  * that does not start on half of all Macs, and a missing x bit is one that starts on none.
  */
 function receiveMacosBuild(): void {
-	const { root, tarball, files } = macosHandoff();
+	const { root, tarball, binaries } = macosHandoff(HANDOFF);
 	if (!existsSync(tarball)) fail(`no ${tarball}; the macOS job did not hand one over`);
 	execFileSync("tar", ["-xf", tarball, "-C", root], { stdio: "inherit" });
-	for (const file of files) {
+	for (const file of binaries) {
 		const path = join(root, file);
 		try {
 			accessSync(path, constants.X_OK);
@@ -1713,7 +1696,7 @@ function receiveMacosBuild(): void {
 		const archs = capture(`lipo -archs ${path}`).split(/\s+/).sort().join(" ");
 		if (archs !== "arm64 x86_64") fail(`${file} is ${archs || "not a Mach-O"}, not universal`);
 	}
-	console.log(`received the macOS build: ${files.length} universal binaries`);
+	console.log(`received the macOS build: ${binaries.length} universal binaries`);
 }
 
 /**

@@ -64,6 +64,23 @@ describe("findPasskeys", () => {
 		expect(findPasskeys(entries, "github.com", ["zzz"])).toHaveLength(0);
 	});
 
+	it("never returns a bramble.sh passkey", () => {
+		const entries: Entry[] = [
+			{
+				...githubLogin,
+				passkeys: [
+					passkey({ credentialId: "unlock", rpId: "bramble.sh" }),
+					passkey({ credentialId: "site", rpId: "example.com" }),
+				],
+			} as Entry,
+		];
+		expect(findPasskeys(entries, "bramble.sh")).toEqual([]);
+		expect(findPasskeys(entries, "BRAMBLE.SH")).toEqual([]);
+		expect(findPasskeys(entries, "example.com").map((m) => m.passkey.credentialId)).toEqual([
+			"site",
+		]);
+	});
+
 	it("ignores non-login entries and logins without passkeys", () => {
 		const entries: Entry[] = [githubLogin, { id: "n", type: "note", name: "secret" } as Entry];
 		expect(findPasskeys(entries, "github.com")).toHaveLength(0);
@@ -116,6 +133,23 @@ describe("withPasskey", () => {
 });
 
 describe("planPasskeyPlacement", () => {
+	it("places a bramble.sh passkey as an unlock-key entry, never on a login", () => {
+		const covering = {
+			id: "l",
+			type: "login",
+			name: "Bramble",
+			urls: ["https://bramble.sh"],
+			username: "vault@local",
+			password: "",
+		} as Entry;
+		const pk = passkey({ rpId: "bramble.sh", userName: "vault@local" });
+		const placement = planPasskeyPlacement([covering], "bramble.sh", "Vault", pk);
+		expect(placement).toEqual({
+			kind: "create",
+			data: { type: "unlock-key", name: "bramble.sh", passkey: pk },
+		});
+	});
+
 	it("attaches to a login already covering the rpId (host or subdomain)", () => {
 		const entries: Entry[] = [githubLogin];
 		const minted = passkey();
@@ -143,7 +177,7 @@ describe("planPasskeyPlacement", () => {
 			passkey({ rpId: "example.org" }),
 		);
 		expect(plan.kind).toBe("create");
-		if (plan.kind === "create") {
+		if (plan.kind === "create" && plan.data.type === "login") {
 			expect(plan.data.name).toBe("Example");
 			expect(plan.data.urls).toEqual(["https://example.org"]);
 			expect(plan.data.passkeys).toHaveLength(1);

@@ -14,7 +14,7 @@ comments point here instead of repeating it.
 | [auth-and-unlock.md](auth-and-unlock.md) | Unlock flows, the slot-policy invariant (always one primary method), verify-without-unlock, error sanitization |
 | [security-keys.md](security-keys.md) | WebAuthn PRF / hmac-secret unlock, two-ceremony registration, one-prompt unlock across keys |
 | [totp.md](totp.md) | Stored authenticator keys: accepted input shapes and the "only digits reach the page" model |
-| [totp-uri-handler.md](totp-uri-handler.md) | Appearing in iOS's "Set Up Codes In" and Android's chooser by handling inbound `otpauth://` URIs, and why an arriving URI is both untrusted and a secret |
+| [totp-uri-handler.md](totp-uri-handler.md) | Appearing in iOS's and macOS's "Set Up Codes In" and Android's chooser by handling inbound `otpauth://` URIs (macOS planned), and why an arriving URI is both untrusted and a secret |
 | [recovery-codes.md](recovery-codes.md) | High-entropy offline recovery codes: format, entropy, normalization |
 | [vault-format.md](vault-format.md) | The VLT1 v2 on-disk binary layout and TLV slots |
 | [password-changelog.md](password-changelog.md) | Superseded passwords kept on a login for propagation lag: the cap, who may write the field, and where it must not leak |
@@ -53,7 +53,7 @@ comments point here instead of repeating it.
 | [desktop-link-onboarding.md](desktop-link-onboarding.md) | Plan: link the desktop app from the setup screen and end with one vault (combine or keep separate); one emoji check and no code, all over the local link; each browser vault pairs with one desktop vault; security review |
 | [windows-release-checklist.md](windows-release-checklist.md) | What CI and a scripted install already cover on Windows, and the human checklist for a release: SmartScreen, tray, autostart, browser pairing, updater, both uninstall answers |
 | [desktop-biometric-unlock.md](desktop-biometric-unlock.md) | Plan: Touch ID and Windows Hello unlock in the desktop app; the key stays in Rust, the macOS keychain gate and its signing requirement, Windows Hello key derivation, no Linux |
-| [macos-credential-provider.md](macos-credential-provider.md) | Plan: an AutoFill credential provider extension in the macOS app, for Safari and native-app fill; what carries over from iOS, and the packaging and App Group unknowns |
+| [macos-credential-provider.md](macos-credential-provider.md) | Plan: an AutoFill credential provider extension in the macOS app, for Safari and native-app fill of passwords, codes and passkeys; iterations by user capability, the verified Tauri packaging seam, and the blocker: Chrome and Firefox route passkeys through the system sheet, so Bramble must never hold or answer the extension's own `bramble.sh` unlock key |
 | [release-signing.md](release-signing.md) | Chrome Web Store packaging + signing |
 | [ci-releases.md](ci-releases.md) | Plan: move every build and signature to GitHub Actions, what it costs in trust, and the phases to get there |
 | [reproducible-builds.md](reproducible-builds.md) | Rebuilding a release from its tag and getting the published bytes: which targets do, why the build runs as x86_64 Linux, and the daily check against the stores |

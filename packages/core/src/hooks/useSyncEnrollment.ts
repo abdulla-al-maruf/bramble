@@ -139,7 +139,7 @@ export function useSyncEnrollment(deps: SyncEnrollmentDeps): SyncEnrollment {
 		const entry = await signOwnEntry(shell, {
 			id: hlc.node,
 			publicKey: inviterPub,
-			label: shell.deviceLabel?.() ?? defaultDeviceLabel(),
+			label: (await shell.deviceLabel?.()) ?? defaultDeviceLabel(),
 			addedAt: Date.now(),
 			hlc,
 		});
@@ -391,7 +391,7 @@ export function useSyncEnrollment(deps: SyncEnrollmentDeps): SyncEnrollment {
 			const ownEntry = await signOwnEntry(shell, {
 				id: hlc.node,
 				publicKey: ownPub,
-				label: shell.deviceLabel?.() ?? defaultDeviceLabel(),
+				label: (await shell.deviceLabel?.()) ?? defaultDeviceLabel(),
 				addedAt: Date.now(),
 				hlc,
 			});

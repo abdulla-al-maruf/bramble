@@ -184,7 +184,10 @@ fn encode_ed25519_cose(public: &[u8; 32]) -> Result<Vec<u8>, CryptoError> {
             iana::OkpKeyParameter::Crv as i64,
             Value::from(iana::EllipticCurve::Ed25519 as u64),
         )
-        .param(iana::OkpKeyParameter::X as i64, Value::Bytes(public.to_vec()))
+        .param(
+            iana::OkpKeyParameter::X as i64,
+            Value::Bytes(public.to_vec()),
+        )
         .build()
         .to_vec()
         .map_err(|e| err(format!("cose encode: {e}")))
@@ -205,23 +208,28 @@ pub fn passkey_import_pkcs8_core(pkcs8_b64: &str) -> Result<PasskeyImportResult,
     let info = PrivateKeyInfo::from_der(pkcs8_der.as_slice())
         .map_err(|_| err("passkey key is not a PKCS#8 private key"))?;
 
-    let (private_key, public_key_cose, alg) = if info.algorithm.oid == p256::elliptic_curve::ALGORITHM_OID {
-        let secret = p256::SecretKey::from_pkcs8_der(pkcs8_der.as_slice())
-            .map_err(|_| err("invalid P-256 PKCS#8 private key"))?;
-        let cose = encode_public_key_cose(&secret.public_key())?;
-        (Zeroizing::new(secret.to_bytes().to_vec()), cose, COSE_ES256)
-    } else if info.algorithm.oid == ed25519_dalek::pkcs8::ALGORITHM_OID {
-        // KeypairBytes zeroizes its seed on drop, and TryFrom rejects a PKCS#8 v2 whose embedded
-        // public key disagrees with the seed.
-        let keypair = ed25519_dalek::pkcs8::KeypairBytes::from_pkcs8_der(pkcs8_der.as_slice())
-            .map_err(|_| err("invalid Ed25519 PKCS#8 private key"))?;
-        let signing = ed25519_dalek::SigningKey::try_from(&keypair)
-            .map_err(|_| err("invalid Ed25519 PKCS#8 private key"))?;
-        let cose = encode_ed25519_cose(&signing.verifying_key().to_bytes())?;
-        (Zeroizing::new(signing.to_bytes().to_vec()), cose, COSE_EDDSA)
-    } else {
-        return Err(err("passkey key uses an unsupported algorithm"));
-    };
+    let (private_key, public_key_cose, alg) =
+        if info.algorithm.oid == p256::elliptic_curve::ALGORITHM_OID {
+            let secret = p256::SecretKey::from_pkcs8_der(pkcs8_der.as_slice())
+                .map_err(|_| err("invalid P-256 PKCS#8 private key"))?;
+            let cose = encode_public_key_cose(&secret.public_key())?;
+            (Zeroizing::new(secret.to_bytes().to_vec()), cose, COSE_ES256)
+        } else if info.algorithm.oid == ed25519_dalek::pkcs8::ALGORITHM_OID {
+            // KeypairBytes zeroizes its seed on drop, and TryFrom rejects a PKCS#8 v2 whose embedded
+            // public key disagrees with the seed.
+            let keypair = ed25519_dalek::pkcs8::KeypairBytes::from_pkcs8_der(pkcs8_der.as_slice())
+                .map_err(|_| err("invalid Ed25519 PKCS#8 private key"))?;
+            let signing = ed25519_dalek::SigningKey::try_from(&keypair)
+                .map_err(|_| err("invalid Ed25519 PKCS#8 private key"))?;
+            let cose = encode_ed25519_cose(&signing.verifying_key().to_bytes())?;
+            (
+                Zeroizing::new(signing.to_bytes().to_vec()),
+                cose,
+                COSE_EDDSA,
+            )
+        } else {
+            return Err(err("passkey key uses an unsupported algorithm"));
+        };
 
     Ok(PasskeyImportResult {
         private_key: B64.encode(private_key.as_slice()),
@@ -230,23 +238,45 @@ pub fn passkey_import_pkcs8_core(pkcs8_b64: &str) -> Result<PasskeyImportResult,
     })
 }
 
+/// Starts the id of every unlock key Bramble holds for its own browser extension, so the extension
+/// can tell, from the rawId alone, that its master password is the only way back in without one.
+pub const UNLOCK_CREDENTIAL_ID_PREFIX: [u8; 4] = *b"BRMU";
+
 /// Mint a new passkey for `rp_id`. ES256 (COSE -7) only for now.
 pub fn passkey_make_credential_core(
     rp_id: &str,
     user_verified: bool,
 ) -> Result<PasskeyRegistration, CryptoError> {
+    let mut credential_id = [0u8; CREDENTIAL_ID_LEN];
+    random_bytes(&mut credential_id)?;
+    make_credential(rp_id, user_verified, &credential_id)
+}
+
+/// Mint the browser extension's unlock key: a passkey whose id carries the unlock prefix.
+pub fn passkey_make_unlock_credential_core(
+    rp_id: &str,
+    user_verified: bool,
+) -> Result<PasskeyRegistration, CryptoError> {
+    let mut credential_id = [0u8; 4 + CREDENTIAL_ID_LEN];
+    credential_id[..4].copy_from_slice(&UNLOCK_CREDENTIAL_ID_PREFIX);
+    random_bytes(&mut credential_id[4..])?;
+    make_credential(rp_id, user_verified, &credential_id)
+}
+
+fn make_credential(
+    rp_id: &str,
+    user_verified: bool,
+    credential_id: &[u8],
+) -> Result<PasskeyRegistration, CryptoError> {
     let secret = generate_p256()?;
     let public = secret.public_key();
     let cose_bytes = encode_public_key_cose(&public)?;
 
-    let mut credential_id = [0u8; CREDENTIAL_ID_LEN];
-    random_bytes(&mut credential_id)?;
-
     // attestedCredentialData: aaguid(16) || credIdLen(2 BE) || credId || cosePubKey.
-    let mut acd = Vec::with_capacity(18 + CREDENTIAL_ID_LEN + cose_bytes.len());
+    let mut acd = Vec::with_capacity(18 + credential_id.len() + cose_bytes.len());
     acd.extend_from_slice(&BRAMBLE_AAGUID);
-    acd.extend_from_slice(&(CREDENTIAL_ID_LEN as u16).to_be_bytes());
-    acd.extend_from_slice(&credential_id);
+    acd.extend_from_slice(&(credential_id.len() as u16).to_be_bytes());
+    acd.extend_from_slice(credential_id);
     acd.extend_from_slice(&cose_bytes);
 
     let flags = FLAG_UP | FLAG_AT | FLAG_SYNCED | if user_verified { FLAG_UV } else { 0 };
@@ -359,7 +389,9 @@ pub fn passkey_get_assertion_core(
                 .map_err(|_| err("invalid passkey private key"))?;
             let signing = ed25519_dalek::SigningKey::from_bytes(&seed);
             // ...and EdDSA signatures raw, not DER.
-            ed25519_dalek::Signer::sign(&signing, &message).to_bytes().to_vec()
+            ed25519_dalek::Signer::sign(&signing, &message)
+                .to_bytes()
+                .to_vec()
         }
         _ => return Err(err("passkey uses an unsupported algorithm")),
     };
@@ -516,7 +548,11 @@ mod tests {
     #[test]
     fn ed25519_import_builds_the_canonical_okp_cose_key() {
         let imported = passkey_import_pkcs8_core(ED25519_PKCS8_V1_B64).unwrap();
-        let seed: [u8; 32] = B64.decode(&imported.private_key).unwrap().try_into().unwrap();
+        let seed: [u8; 32] = B64
+            .decode(&imported.private_key)
+            .unwrap()
+            .try_into()
+            .unwrap();
         let expected = ed25519_from_seed(seed).verifying_key().to_bytes();
 
         let cose = CoseKey::from_slice(&B64.decode(&imported.public_key_cose).unwrap()).unwrap();
@@ -557,7 +593,11 @@ mod tests {
 
         let mut signed = B64.decode(&assertion.authenticator_data).unwrap();
         signed.extend_from_slice(&B64.decode(&client_data_hash).unwrap());
-        let seed: [u8; 32] = B64.decode(&imported.private_key).unwrap().try_into().unwrap();
+        let seed: [u8; 32] = B64
+            .decode(&imported.private_key)
+            .unwrap()
+            .try_into()
+            .unwrap();
         let vk = ed25519_from_seed(seed).verifying_key();
         let sig = ed25519_dalek::Signature::from_slice(&sig_bytes).unwrap();
         assert!(vk.verify(&signed, &sig).is_ok());
@@ -585,7 +625,8 @@ mod tests {
                 .is_err()
         );
         assert!(
-            passkey_get_assertion_core("rp.example", &imported.private_key, 0, &hash, true).is_err()
+            passkey_get_assertion_core("rp.example", &imported.private_key, 0, &hash, true)
+                .is_err()
         );
     }
 
@@ -662,6 +703,20 @@ mod tests {
     // the minted public key. Catches any wiring bug in authData layout, the signed
     // message, or the DER signature encoding.
     #[test]
+    fn unlock_credential_ids_carry_the_prefix() {
+        let reg = passkey_make_unlock_credential_core("bramble.sh", true).unwrap();
+        let id = B64.decode(&reg.credential_id).unwrap();
+        assert_eq!(&id[..4], b"BRMU");
+        assert_eq!(id.len(), 4 + CREDENTIAL_ID_LEN);
+        let auth = B64.decode(&reg.authenticator_data).unwrap();
+        // rpIdHash(32) flags(1) signCount(4) aaguid(16) credIdLen(2) credId
+        assert_eq!(u16::from_be_bytes([auth[53], auth[54]]) as usize, id.len());
+        assert_eq!(&auth[55..55 + id.len()], id.as_slice());
+        let plain = passkey_make_credential_core("bramble.sh", true).unwrap();
+        assert_ne!(&B64.decode(&plain.credential_id).unwrap()[..4], b"BRMU");
+    }
+
+    #[test]
     fn make_then_assert_round_trip_verifies() {
         let rp = "github.com";
         let reg = passkey_make_credential_core(rp, true).unwrap();
@@ -677,7 +732,8 @@ mod tests {
 
         let client_data_hash = B64.encode([0x11u8; 32]);
         let assertion =
-            passkey_get_assertion_core(rp, &reg.private_key, COSE_ES256, &client_data_hash, true).unwrap();
+            passkey_get_assertion_core(rp, &reg.private_key, COSE_ES256, &client_data_hash, true)
+                .unwrap();
 
         let auth_data = B64.decode(&assertion.authenticator_data).unwrap();
         assert_eq!(
@@ -690,7 +746,11 @@ mod tests {
             Sha256::digest(rp.as_bytes()).as_slice(),
             "rpIdHash"
         );
-        assert_eq!(auth_data[32], FLAG_UP | FLAG_UV | FLAG_SYNCED, "UP+UV+backup flags");
+        assert_eq!(
+            auth_data[32],
+            FLAG_UP | FLAG_UV | FLAG_SYNCED,
+            "UP+UV+backup flags"
+        );
         assert_eq!(&auth_data[33..37], &[0, 0, 0, 0], "signCount must be zero");
 
         let mut message = auth_data.clone();
@@ -701,18 +761,41 @@ mod tests {
             .is_ok());
     }
 
-    // The signature must be bound to the exact clientDataHash (phishing/tamper guard):
-    // verifying against a different challenge must fail.
+    // The macOS AutoFill extension keeps the browser extension's unlock key, so the core mints and
+    // signs for it like any site; keeping it out of vault lists is the vault layers' job.
+    #[test]
+    fn the_core_mints_and_signs_for_the_unlock_rp_id() {
+        let reg = passkey_make_credential_core("bramble.sh", true).unwrap();
+        let hash = B64.encode([0x22u8; 32]);
+        assert!(passkey_get_assertion_core(
+            "bramble.sh",
+            &reg.private_key,
+            COSE_ES256,
+            &hash,
+            true
+        )
+        .is_ok());
+    }
+
     #[test]
     fn assertion_is_bound_to_client_data_hash() {
         let rp = "example.org";
         let reg = passkey_make_credential_core(rp, false).unwrap();
-        let assertion =
-            passkey_get_assertion_core(rp, &reg.private_key, COSE_ES256, &B64.encode([0x01u8; 32]), false)
-                .unwrap();
+        let assertion = passkey_get_assertion_core(
+            rp,
+            &reg.private_key,
+            COSE_ES256,
+            &B64.encode([0x01u8; 32]),
+            false,
+        )
+        .unwrap();
 
         let auth_data = B64.decode(&assertion.authenticator_data).unwrap();
-        assert_eq!(auth_data[32], FLAG_UP | FLAG_SYNCED, "UP + backup flags, no UV");
+        assert_eq!(
+            auth_data[32],
+            FLAG_UP | FLAG_SYNCED,
+            "UP + backup flags, no UV"
+        );
 
         let mut tampered = auth_data.clone();
         tampered.extend_from_slice(&[0x02u8; 32]);
@@ -739,7 +822,11 @@ mod tests {
             _ => panic!("attestationObject must be a CBOR map"),
         };
         assert_eq!(auth_data[32] & FLAG_AT, FLAG_AT, "AT flag set");
-        assert_eq!(auth_data[32] & FLAG_SYNCED, FLAG_SYNCED, "synced (BE|BS) flags set");
+        assert_eq!(
+            auth_data[32] & FLAG_SYNCED,
+            FLAG_SYNCED,
+            "synced (BE|BS) flags set"
+        );
         assert_eq!(&auth_data[37..53], &BRAMBLE_AAGUID, "aaguid present");
         let cred_len = u16::from_be_bytes([auth_data[53], auth_data[54]]) as usize;
         assert_eq!(cred_len, CREDENTIAL_ID_LEN);

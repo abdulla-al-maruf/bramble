@@ -7,6 +7,10 @@ import type {
 	MatchSummary,
 	QueryResult,
 } from "@core/adapters/autofill";
+
+/** The browser never serves the extension's own unlock key; only the macOS AutoFill extension does. */
+type BrowserIndexEntry = Exclude<IndexEntry, { type: "unlock-key" }>;
+
 import { AliasError } from "@core/aliases";
 import { decodeEntriesPayload } from "@core/sync";
 import { parseTotp, totpAt } from "@core/util/totp";
@@ -21,6 +25,7 @@ import {
 	hostSpecificity,
 	registrableDomain,
 } from "../dedupe";
+import { lastNormalWindow, pageBehind } from "../normal-window";
 import { api } from "../platform-api";
 import { isExtensionSender } from "../sender";
 import { aliasAvailable, aliasConfiguredAnywhere, createAlias } from "./alias";
@@ -30,7 +35,7 @@ import {
 	onDesktopFillRequest,
 	reportActiveTab,
 } from "./desktop-link";
-import { shortcutGrantLive, spendShortcutGrant } from "./fill-shortcut";
+import { armShortcutGrant, shortcutGrantLive, spendShortcutGrant } from "./fill-shortcut";
 import {
 	armLaunchGrant,
 	LAUNCH_VIEW_GRACE_MS,
@@ -66,7 +71,7 @@ const HOSTNAMES_KEY = "autofill.knownHostnames";
 // usable (or publishable) after a lock/unlock or active-vault replacement.
 type AutofillIndexCache = Readonly<{
 	owner: AutofillSessionOwner;
-	entries: Map<string, IndexEntry>;
+	entries: Map<string, BrowserIndexEntry>;
 }>;
 
 let autofillIndex: AutofillIndexCache | null = null;
@@ -164,7 +169,7 @@ function sameOwner(left: AutofillSessionOwner, right: AutofillSessionOwner): boo
 }
 
 /** The live index only if it belongs to the current unlocked vault/key session. */
-function currentIndex(): Map<string, IndexEntry> | null {
+function currentIndex(): Map<string, BrowserIndexEntry> | null {
 	const owner = autofillSessionOwner();
 	if (owner && autofillIndex && sameOwner(autofillIndex.owner, owner)) return autofillIndex.entries;
 	// Drop stale plaintext as soon as it is observed. Incrementing revision also prevents an
@@ -179,7 +184,7 @@ function currentIndex(): Map<string, IndexEntry> | null {
 function publishIndex(
 	owner: AutofillSessionOwner,
 	revision: number,
-	entries: Map<string, IndexEntry>,
+	entries: Map<string, BrowserIndexEntry>,
 ): boolean {
 	if (cacheRevision !== revision || !autofillSessionOwnerIsCurrent(owner)) return false;
 	autofillIndex = { owner, entries };
@@ -218,7 +223,7 @@ export function clearIndex(): void {
 }
 
 /** The index entry for `id`, or undefined when the index is absent/missing it. */
-export function getIndexEntry(id: string): IndexEntry | undefined {
+export function getIndexEntry(id: string): BrowserIndexEntry | undefined {
 	return currentIndex()?.get(id);
 }
 
@@ -251,7 +256,7 @@ export function dedupeCapture(
 }
 
 /** Masked card label for the dropdown, e.g. "Visa •••• 1234". */
-function cardSecondary(entry: Extract<IndexEntry, { type: "card" }>): string {
+function cardSecondary(entry: Extract<BrowserIndexEntry, { type: "card" }>): string {
 	const last4 = entry.number.replace(/\D/g, "").slice(-4);
 	const tail = last4 ? `•••• ${last4}` : "";
 	return [entry.brand, tail].filter(Boolean).join(" ");
@@ -482,7 +487,7 @@ async function hydrateIndexForOwner(
 		// The outer payload is `{entries, tombstones}` (see core/sync/entries-payload); parsing it
 		// as a bare array threw and left the index null, so every query answered "vault locked".
 		const { entries: encryptedEntries } = decodeEntriesPayload(outerResp.data);
-		const newIndex = new Map<string, IndexEntry>();
+		const newIndex = new Map<string, BrowserIndexEntry>();
 		// One VEK-scoped round-trip, with per-entry failures and explicit identity.
 		const batchResp = await sendToOffscreen({
 			type: "CRYPTO_DECRYPT_INDEX",
@@ -604,9 +609,10 @@ async function autofillSetIndex(
 	if (!owner || owner.vaultId !== capability.vaultId || owner.token !== capability.token) {
 		return { ok: false, error: "unavailable" };
 	}
-	const index = new Map<string, IndexEntry>();
+	const index = new Map<string, BrowserIndexEntry>();
 	knownHostnames.clear();
 	for (const entry of entries) {
+		if (entry.type === "unlock-key") continue;
 		index.set(entry.id, entry);
 		// Register every hostname a login covers so the locked-state hint lights up on all of them.
 		if (entry.type === "login") {
@@ -842,7 +848,7 @@ async function launchQualifies(
 
 /** A new tab in the last focused normal window, or a new window when there is none. */
 async function openInNormalWindow(url: string): Promise<number | undefined> {
-	const win = await api.windows.getLastFocused({ windowTypes: ["normal"] }).catch(() => undefined);
+	const win = await lastNormalWindow();
 	if (win?.id === undefined) return (await api.windows.create({ url }))?.tabs?.[0]?.id;
 	const tab = await api.tabs.create({ url, windowId: win.id, active: true });
 	// The launch can come from a pop-out, which would otherwise stay in front of the new tab.
@@ -862,6 +868,43 @@ async function autofillLaunch(message: any): Promise<MessageEnvelope> {
 		armLaunchGrant(tabId, launch.entryId, owner, launch.url.protocol);
 	}
 	return { ok: true, data: null };
+}
+
+/**
+ * Fill a login chosen in Bramble's own window into the page behind it (#215). The tab gets one
+ * fill, as the shortcut grants, and its top frame asks for the login through AUTOFILL_SELECT,
+ * which checks it against the page again. Refused when the login isn't this page's, or the page
+ * has no login form; "Autofill on web pages" being off doesn't stop it, as it doesn't the shortcut.
+ */
+async function autofillFillTab(message: any): Promise<MessageEnvelope> {
+	const entryId = (message.payload as { entryId?: unknown } | undefined)?.entryId;
+	if (typeof entryId !== "string" || !entryId || entryId.length > 256) {
+		return { ok: false, error: "invalid_request" };
+	}
+	const owner = autofillSessionOwner();
+	if (!owner) return { ok: false, error: "unavailable" };
+	const tab = await pageBehind();
+	if (tab?.id === undefined || !tab.url) return { ok: false, error: "no_form" };
+	const page = new URL(tab.url);
+	await hydrateAutofillIndexFromDisk();
+	if (!autofillSessionOwnerIsCurrent(owner)) return { ok: false, error: "unavailable" };
+	const entry = currentIndex()?.get(entryId);
+	if (
+		entry?.type !== "login" ||
+		entry.autofillEnabled === false ||
+		!hostnameMatches(entry, page.hostname, effectivePort(page))
+	) {
+		return { ok: false, error: "no_form" };
+	}
+	armShortcutGrant(tab.id, owner);
+	// Bramble's popup closes as the page takes the fill; "Immediate" would take that for the last view going.
+	armViewGrace(LAUNCH_VIEW_GRACE_MS);
+	const reply = (await api.tabs
+		.sendMessage(tab.id, { type: "AUTOFILL_FILL_ENTRY", payload: { entryId } }, { frameId: 0 })
+		.catch(() => undefined)) as { ok?: unknown } | undefined;
+	if (reply?.ok === true) return { ok: true, data: null };
+	spendShortcutGrant(tab.id);
+	return { ok: false, error: "no_form" };
 }
 
 /** A frame's rules on top of the page rules: the page around it has to be the login's too. */
@@ -1117,6 +1160,7 @@ on("AUTOFILL_FETCH", autofillFetch);
 on("AUTOFILL_QUERY", autofillQuery);
 on("AUTOFILL_SELECT", autofillSelect);
 on("AUTOFILL_LAUNCH", extensionOnly(autofillLaunch));
+on("AUTOFILL_FILL_TAB", extensionOnly(autofillFillTab));
 on("AUTOFILL_LAUNCH_CLAIM", autofillLaunchClaim);
 on("AUTOFILL_LAUNCH_END", autofillLaunchEnd);
 on("AUTOFILL_LAUNCH_LIVE", autofillLaunchLive);

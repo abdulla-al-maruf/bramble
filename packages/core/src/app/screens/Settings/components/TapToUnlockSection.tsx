@@ -4,11 +4,15 @@ import { useCallback, useState } from "react";
 import { useCan } from "../../../../context/PlatformContext";
 import { usePrefs } from "../../../../hooks/usePrefs";
 import { useVault } from "../../../../hooks/useVault";
+import { useVaultRegistry } from "../../../../hooks/useVaultRegistry";
+import { browserName } from "../../../../util/device-label";
+import { displayLabel } from "../../../../vault/vault-registry";
 import type { WebauthnKeyKind } from "../../../../vault/webauthn-ceremony";
 import { Button } from "../../../components/ui/button";
 import { InlineConfirm } from "../../../components/ui/inline-confirm";
+import { Toggle } from "../../../components/ui/toggle";
 import { useWebauthnHandoff, type WebauthnHandoff } from "../../../hooks/useWebauthnHandoff";
-import { Row, Toggle } from "./primitives";
+import { Row } from "./primitives";
 
 /**
  * Touch ID / Windows Hello and security keys in one list, because they are one mechanism: both
@@ -23,11 +27,14 @@ export function TapToUnlockSection() {
 	const { webauthnKeys, registerWebauthnKey, revokeWebauthnKey } = useVault();
 	const canSecurityKeys = useCan("securityKeys");
 	const { prefs, update } = usePrefs();
+	const { vaults, activeId } = useVaultRegistry();
 	const { t } = useLingui();
 	const [adding, setAdding] = useState(false);
 	const [label, setLabel] = useState("");
 	const [busy, setBusy] = useState<WebauthnKeyKind | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	// The key being asked about: its "where it lives" note makes way for the buttons.
+	const [removingId, setRemovingId] = useState<string | null>(null);
 
 	const runRegister = useCallback(
 		async (kind: WebauthnKeyKind, named: string) => {
@@ -60,12 +67,19 @@ export function TapToUnlockSection() {
 	const { mustHandOff, handOff } = useWebauthnHandoff(onResume);
 
 	const handleAdd = (kind: WebauthnKeyKind) => {
-		const named = label.trim() || (kind === "platform" ? t`This device` : t`Security key`);
+		const named = label.trim() || (kind === "platform" ? defaultPlatformName() : t`Security key`);
 		if (mustHandOff) {
 			handOff({ webauthn: "register", kind, label: named });
 			return;
 		}
 		void runRegister(kind, named);
+	};
+
+	// Which browser and vault, so Bramble Desktop can list each one it holds a key for.
+	const defaultPlatformName = () => {
+		const index = vaults.findIndex((v) => v.id === activeId);
+		const vault = index >= 0 ? displayLabel(vaults[index]!, index) : "";
+		return vault ? `${browserName()} · ${vault}` : browserName();
 	};
 
 	const handleRevoke = async (slotIdB64: string) => {
@@ -118,13 +132,20 @@ export function TapToUnlockSection() {
 								<span className="truncate">{k.label}</span>
 								{/* Where this key actually works. Apple Passwords syncs across the account, so
 								    one registration covers every Mac; Windows Hello is bound to the machine. */}
-								{k.kind === "platform" && (
+								{k.kind === "platform" && removingId !== k.slotIdB64 && (
 									<span className="text-muted-foreground shrink-0">
-										{k.synced ? t`all your devices` : t`this device only`}
+										{k.heldByBramble
+											? t`in Bramble Desktop`
+											: k.synced
+												? t`all your devices`
+												: t`this device only`}
 									</span>
 								)}
 							</span>
 							<InlineConfirm
+								className="shrink-0"
+								armed={removingId === k.slotIdB64}
+								onArmedChange={(armed) => setRemovingId(armed ? k.slotIdB64 : null)}
 								confirmLabel={<Trans>Remove</Trans>}
 								busyLabel={<Trans>Removing…</Trans>}
 								onConfirm={() => handleRevoke(k.slotIdB64)}

@@ -10,6 +10,13 @@
 	<string>BHGR3PP64J.app.bramble.desktop</string>
 	<key>com.apple.developer.team-identifier</key>
 	<string>BHGR3PP64J</string>
+	<!-- The credential provider: Apple wants it on the containing app as well as the appex. -->
+	<key>com.apple.developer.authentication-services.autofill-credential-provider</key>
+	<true/>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>BHGR3PP64J.group.app.bramble.desktop</string>
+	</array>
 	<key>keychain-access-groups</key>
 	<array>
 		<string>BHGR3PP64J.app.bramble.desktop</string>

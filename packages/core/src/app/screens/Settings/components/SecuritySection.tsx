@@ -2,6 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import { Lock } from "lucide-react";
 import { useWebauthnUnlock } from "../../../hooks/useWebauthnUnlock";
 import { BiometricSection } from "./BiometricSection";
+import { BrowserUnlockKeysSection } from "./BrowserUnlockKeysSection";
 import { MasterPasswordSection } from "./MasterPasswordSection";
 import { Section } from "./primitives";
 import { RecoveryCodeSection } from "./RecoveryCodeSection";
@@ -18,6 +19,7 @@ export function SecuritySection() {
 			    Firefox shows this but hides the security-key option inside it. */}
 			{canWebauthnUnlock && <TapToUnlockSection />}
 			<BiometricSection />
+			<BrowserUnlockKeysSection />
 			<RecoveryCodeSection />
 		</Section>
 	);

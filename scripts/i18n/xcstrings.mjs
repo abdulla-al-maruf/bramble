@@ -1,5 +1,5 @@
-// iOS String Catalog (.xcstrings) adapter. The catalog is JSON: each key holds
-// per-language "localizations". We fill missing target-language entries from the
+// String Catalog (.xcstrings) adapter, for the iOS and macOS AutoFill extensions. A catalog is
+// JSON: each key holds per-language "localizations". We fill missing target-language entries from the
 // source value. No-ops until the Swift UI is migrated off hardcoded Text() to a
 // String Catalog (see notes in the i18n plan). Idempotent.
 
@@ -10,12 +10,16 @@ import { translateBatch } from "./ollama.mjs";
 const unit = (value) => ({ stringUnit: { state: "translated", value } });
 
 export async function run() {
-	console.log("• iOS String Catalog (.xcstrings)");
-	if (!existsSync(XCSTRINGS)) {
+	for (const path of XCSTRINGS) await runOne(path);
+}
+
+async function runOne(catalog) {
+	console.log(`• String Catalog ${catalog}`);
+	if (!existsSync(catalog)) {
 		console.log("  no Localizable.xcstrings yet (migrate Swift UI first) — skipping");
 		return;
 	}
-	const cat = JSON.parse(readFileSync(XCSTRINGS, "utf8"));
+	const cat = JSON.parse(readFileSync(catalog, "utf8"));
 	const src = cat.sourceLanguage ?? SOURCE;
 	const keys = Object.keys(cat.strings ?? {});
 
@@ -42,5 +46,5 @@ export async function run() {
 		});
 		console.log(`  ${code}: wrote ${pending.length}`);
 	}
-	writeFileSync(XCSTRINGS, `${JSON.stringify(cat, null, 2)}\n`);
+	writeFileSync(catalog, `${JSON.stringify(cat, null, 2)}\n`);
 }

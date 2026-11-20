@@ -174,6 +174,9 @@ export interface ShellAdapter {
 	/** Open a login's website in a new tab and fill it there once (extension only). See
 	 * docs/launch-and-fill.md. */
 	launchLogin?(entryId: string, url: string): Promise<void>;
+	/** Fill a login into the page behind Bramble's window, one the list matched to it (extension
+	 * only; #215). False when that page has no login form for it. */
+	fillLogin?(entryId: string): Promise<boolean>;
 	/** Whether the browser's own password manager is switched off for Bramble (extension only; #135). */
 	getDefaultPasswordManager?(): Promise<DefaultPasswordManager>;
 	/** Switch the browser's own password saving and card autofill off (true) or hand them back.
@@ -292,8 +295,9 @@ export interface ShellAdapter {
 	updatesManagedExternally?(): boolean;
 	/** What to call this device in the roster, where the host knows better than the user agent
 	 * does. A native app's UA describes its webview, so a Tauri window reports as Safari and would
-	 * otherwise be listed as a browser. Absent means sniff the UA. */
-	deviceLabel?(): string;
+	 * otherwise be listed as a browser, and Zen or Orion would be listed as Firefox. Absent means
+	 * sniff the UA. */
+	deviceLabel?(): string | Promise<string>;
 	/** This device's admission verify key (base64), derived from the master password + this device's
 	 * password-slot salt (Item A rogue-injection close). Published in the device's roster entry so
 	 * peers can verify which NEW devices this one admits. Requires a fresh password entry; the signing

@@ -233,6 +233,63 @@ describe("the unlock pop-out closes itself once the vault opens", () => {
 	});
 });
 
+describe("POPOUT_BOUNDS_SETTLED (#225)", () => {
+	const win = (id: number, extra: Record<string, unknown> = {}) => ({
+		id,
+		type: "normal",
+		state: "normal",
+		left: 4 * id,
+		top: 33,
+		width: 1280,
+		height: 776,
+		...extra,
+	});
+	const settle = (bg: BackgroundHarness) =>
+		bg.send({ type: "POPOUT_BOUNDS_SETTLED" }, extensionSender);
+
+	// Firefox's getLastFocused names the pop-out itself while it has focus.
+	const popout = win(999, { type: "popup" });
+
+	it("sets the window the pop-out came from to the bounds it already has", async () => {
+		const bg = await loadBackground({
+			lastFocusedWindow: popout,
+			allWindows: [win(2), popout, win(1)],
+		});
+		await bg.send({ type: "POPOUT_OPEN", payload: {} }, pageSender("example.com", 4));
+		vi.mocked(bg.chrome.windows.update).mockClear();
+		const { resp } = await settle(bg);
+		expect(resp).toEqual({ ok: true });
+		// pageSender's tab sits in window 1.
+		expect(bg.chrome.windows.update).toHaveBeenCalledExactlyOnceWith(1, {
+			left: 4,
+			top: 33,
+			width: 1280,
+			height: 776,
+		});
+	});
+
+	it("falls back to another normal window, never the pop-out", async () => {
+		const bg = await loadBackground({ lastFocusedWindow: popout, allWindows: [popout, win(5)] });
+		await settle(bg);
+		expect(bg.chrome.windows.update).toHaveBeenCalledExactlyOnceWith(5, expect.anything());
+	});
+
+	it("leaves a maximized, full-screen or minimized window alone", async () => {
+		for (const state of ["maximized", "fullscreen", "minimized"]) {
+			const bg = await loadBackground({ lastFocusedWindow: win(5, { state }) });
+			await settle(bg);
+			expect(bg.chrome.windows.update).not.toHaveBeenCalled();
+		}
+	});
+
+	it("ignores a web page", async () => {
+		const bg = await loadBackground({ allWindows: [win(5)] });
+		const { resp } = await bg.send({ type: "POPOUT_BOUNDS_SETTLED" }, pageSender("example.com", 4));
+		expect(resp).toEqual({ ok: false, error: "forbidden" });
+		expect(bg.chrome.windows.update).not.toHaveBeenCalled();
+	});
+});
+
 describe("POPOUT_CONSUME_HANDOFF", () => {
 	it("returns the stashed handoff and deletes it (one-shot)", async () => {
 		const bg = await loadBackground({ sessionSeed: { [HANDOFF_KEY]: { draft: "y" } } });

@@ -130,6 +130,16 @@ describe("enrollment bundle", () => {
 		},
 	};
 
+	it("never carries a local-only entry to the joining device", () => {
+		const first = bundle.entries.entries[0]!;
+		const withLocal: EnrollmentBundle = {
+			...bundle,
+			entries: { ...bundle.entries, entries: [first, { ...first, id: "u", localOnly: true }] },
+		};
+		const sent = decodeEnrollmentBundle(encodeEnrollmentBundle(withLocal));
+		expect(sent.entries.entries.map((e) => e.id)).toEqual(["e1"]);
+	});
+
 	it("round-trips vek + roster + entries", () => {
 		expect(decodeEnrollmentBundle(encodeEnrollmentBundle(bundle))).toEqual(bundle);
 	});

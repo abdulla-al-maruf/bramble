@@ -4,9 +4,12 @@ import { bodyToBlob, type HttpBodySource } from "@core/adapters/http";
 import type { OptionsScreen, PopOutHandoff, ShellAdapter } from "@core/adapters/shell";
 import type { Target } from "@core/flags";
 import { loginHosts } from "@core/vault/autofill-index";
+import { UNLOCK_RP_ID } from "@core/vault/reserved-rp";
 import { setWebauthnInterceptionPauser, setWebauthnRpId } from "@core/vault/webauthn-ceremony";
+import { extensionDeviceLabel } from "./browser-name";
 import { reconcileDefaultPasswordManager, setDefaultPasswordManager } from "./browser-saving";
 import { effectivePort, hostnameMatches } from "./dedupe";
+import { pageBehind } from "./normal-window";
 import { api } from "./platform-api";
 import { ACTIVE_VAULT_SESSION_KEY } from "./session-keys";
 import {
@@ -85,12 +88,13 @@ const firefoxMajor = Number(
 	/Firefox\/(\d+)/.exec(typeof navigator === "undefined" ? "" : navigator.userAgent)?.[1] ?? 0,
 );
 const canClaimRpId = extensionTarget !== "firefox" || firefoxMajor >= FIREFOX_RPID_CLAIM_MIN;
-setWebauthnRpId(canClaimRpId ? "bramble.sh" : undefined, {
+setWebauthnRpId(canClaimRpId ? UNLOCK_RP_ID : undefined, {
 	implicitUsable: extensionTarget !== "firefox",
 });
 
 /** ShellAdapter for the browser-extension platform (options page, pop-out, tab origin, QR scan). */
 export const extensionShell: ShellAdapter = {
+	deviceLabel: extensionDeviceLabel,
 	appName: manifest.name,
 	version: manifest.version,
 	async openSetup(screen?: OptionsScreen) {
@@ -131,20 +135,8 @@ export const extensionShell: ShellAdapter = {
 		try {
 			// Toolbar popup: the page we're acting on is our own window's active tab.
 			const [own] = await api.tabs.query({ active: true, currentWindow: true });
-			const ownOrigin = webOrigin(own);
-			if (ownOrigin) return ownOrigin;
-			// Detached pop-out: it lives in its own popup-type window, whose only tab is this
-			// extension page, so the query above finds no web page and site-aware features
-			// (matchCurrentTab's float-to-top, the new-entry URL prefill) silently went dead.
-			// Fall back to the active tab of a normal browser window - the page behind us.
-			// With several normal windows open the first web tab wins; there's no API for
-			// "focused before ours", and any of them beats no match at all.
-			const tabs = await api.tabs.query({ active: true, windowType: "normal" });
-			for (const tab of tabs) {
-				const origin = webOrigin(tab);
-				if (origin) return origin;
-			}
-			return null;
+			// Detached pop-out: its own window holds only this page, so the page is the one behind it.
+			return webOrigin(own) ?? webOrigin(await pageBehind());
 		} catch {
 			return null;
 		}
@@ -224,6 +216,15 @@ export const extensionShell: ShellAdapter = {
 			.sendMessage({ type: "AUTOFILL_LAUNCH", payload: { entryId, url } })
 			.catch(() => undefined)) as { ok?: boolean } | undefined;
 		if (!res?.ok) window.open(url, "_blank", "noopener,noreferrer");
+	},
+	async fillLogin(entryId: string) {
+		const res = (await api.runtime
+			.sendMessage({ type: "AUTOFILL_FILL_TAB", payload: { entryId } })
+			.catch(() => undefined)) as { ok?: boolean } | undefined;
+		if (!res?.ok) return false;
+		// The toolbar popup has done its job; a pop-out the user keeps open stays.
+		if (!this.isDetached()) window.close();
+		return true;
 	},
 	// Reports failure, unlike setAutofillEnabled above: turning this on can genuinely fail
 	// (another extension holds the WebAuthn proxy), and a switch that says "on" while nothing is

@@ -4,6 +4,7 @@ import {
 	Check,
 	Copy,
 	KeyRound,
+	LogIn,
 	type LucideIcon,
 	MoreVertical,
 	Pencil,
@@ -44,6 +45,8 @@ interface EntryRowProps {
 	onDelete: (id: string) => Promise<void>;
 	/** Called after a successful quick-copy, to record the entry as recently used. */
 	onUse?: (id: string) => void;
+	/** Fill this login into the page behind Bramble's window; set only on rows matched to it. */
+	onFill?: (id: string) => void;
 	/** Tint the row when it matches the current site (surfaced at the top of the list). */
 	highlighted?: boolean;
 	/**
@@ -52,7 +55,8 @@ interface EntryRowProps {
 	 */
 	selectMode?: boolean;
 	selected?: boolean;
-	onToggleSelect?: (id: string) => void;
+	/** `range` is a shift-click: select from the last row clicked to this one. */
+	onToggleSelect?: (id: string, range: boolean) => void;
 	/** Touch long-press on the row. Omitted where selection isn't offered. */
 	onLongPress?: (id: string) => void;
 }
@@ -74,6 +78,7 @@ export const EntryRow = memo(function EntryRow({
 	onEdit,
 	onDelete,
 	onUse,
+	onFill,
 	highlighted,
 	selectMode = false,
 	selected = false,
@@ -91,6 +96,9 @@ export const EntryRow = memo(function EntryRow({
 	const passkeyLabel = passkeys === 1 ? t`Holds a passkey` : t`Holds ${passkeys} passkeys`;
 	const copyRef = useRef<HTMLDivElement>(null);
 	const moreRef = useRef<HTMLDivElement>(null);
+	// Whether the click now toggling the row held Shift. Read from the click, since the
+	// checkbox only reports a change event, which carries no modifier keys.
+	const shift = useRef(false);
 
 	useEffect(() => {
 		if (!copyOpen && !moreOpen) return;
@@ -142,7 +150,7 @@ export const EntryRow = memo(function EntryRow({
 
 	// In selection mode the row is a checkbox, not a link: tapping it toggles.
 	const activate = () => {
-		if (selectMode && onToggleSelect) onToggleSelect(id);
+		if (selectMode && onToggleSelect) onToggleSelect(id, shift.current);
 		else onSelect(id);
 	};
 	const press = useLongPress({
@@ -161,6 +169,9 @@ export const EntryRow = memo(function EntryRow({
 			// Targeted by the mobile stylesheet to kill the iOS long-press callout, which
 			// inherits down to the pressable button inside.
 			data-entry-row=""
+			onClickCapture={(e) => {
+				shift.current = e.shiftKey;
+			}}
 			// select-none: a long press must enter selection mode, not start an OS text selection.
 			className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg border select-none transition-all duration-200 has-[[data-row-open]:focus-visible]:outline-2 has-[[data-row-open]:focus-visible]:outline-ring ${
 				selected
@@ -175,7 +186,7 @@ export const EntryRow = memo(function EntryRow({
 			{onToggleSelect && selectMode && (
 				<Checkbox
 					checked={selected}
-					onChange={() => onToggleSelect(id)}
+					onChange={() => onToggleSelect(id, shift.current)}
 					ariaLabel={t`Select ${name}`}
 					// Negative margin + matching padding: a full-height hit target that
 					// doesn't make the row taller.
@@ -260,6 +271,18 @@ export const EntryRow = memo(function EntryRow({
 								: "row-start-1 col-start-1 justify-self-end self-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
 						}`}
 					>
+						{onFill && (
+							<Button
+								variant="ghost"
+								size="none"
+								onClick={() => onFill(id)}
+								className="p-1.5 rounded-md"
+								aria-label={t`Fill`}
+								title={t`Fill`}
+							>
+								<LogIn className="w-3.5 h-3.5" />
+							</Button>
+						)}
 						{launchUrl && (
 							<OpenWebsiteLink href={launchUrl} entryId={id} onOpen={() => onUse?.(id)} />
 						)}

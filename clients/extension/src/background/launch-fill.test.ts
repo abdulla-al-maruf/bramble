@@ -66,11 +66,23 @@ describe("AUTOFILL_LAUNCH", () => {
 	});
 
 	it("opens the tab in the last focused normal window and brings it forward", async () => {
-		const bg = await unlocked({ lastFocusedWindow: { id: 7 } });
+		const bg = await unlocked({ lastFocusedWindow: { id: 7, type: "normal" } });
 		expect((await launch(bg)).resp.ok).toBe(true);
 		expect(bg.state.tabsCreated).toEqual([{ url: URL_, windowId: 7, active: true }]);
 		expect(bg.chrome.windows.getLastFocused).toHaveBeenCalledWith({ windowTypes: ["normal"] });
 		expect(bg.chrome.windows.update).toHaveBeenCalledWith(7, { focused: true });
+	});
+
+	it("opens the tab in the window a Firefox pop-out came from, not inside the pop-out", async () => {
+		const popout = { id: 999, type: "popup" };
+		const bg = await unlocked({
+			lastFocusedWindow: popout,
+			allWindows: [{ id: 2, type: "normal" }, popout, { id: 1, type: "normal" }],
+		});
+		bg.state.session["popout.anchorWindowId"] = 1;
+		expect((await launch(bg)).resp.ok).toBe(true);
+		expect(bg.state.tabsCreated).toEqual([{ url: URL_, windowId: 1, active: true }]);
+		expect(bg.chrome.windows.update).toHaveBeenCalledWith(1, { focused: true });
 	});
 
 	it("opens a new window when there is no normal one, and still arms the grant", async () => {

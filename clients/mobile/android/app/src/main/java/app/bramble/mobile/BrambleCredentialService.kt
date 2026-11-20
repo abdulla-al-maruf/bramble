@@ -19,6 +19,7 @@ import androidx.credentials.provider.BeginGetPublicKeyCredentialOption
 import androidx.credentials.provider.CreateEntry
 import androidx.credentials.provider.CredentialProviderService
 import androidx.credentials.provider.ProviderClearCredentialStateRequest
+import org.json.JSONObject
 
 // Bramble's passkey provider for the Android Credential Manager (API 34+). The system pulls
 // at request time: onBeginGet returns the passkeys we hold for the request (each as an entry
@@ -59,7 +60,9 @@ class BrambleCredentialService : CredentialProviderService() {
         cancellationSignal: CancellationSignal,
         callback: OutcomeReceiver<BeginCreateCredentialResponse, CreateCredentialException>,
     ) {
-        if (request !is BeginCreatePublicKeyCredentialRequest || !VaultReader.hasVault(this)) {
+        if (request !is BeginCreatePublicKeyCredentialRequest || !VaultReader.hasVault(this) ||
+            PasskeyPolicy.isReservedRpId(createRpId(request.requestJson))
+        ) {
             callback.onResult(BeginCreateCredentialResponse())
             return
         }
@@ -72,6 +75,9 @@ class BrambleCredentialService : CredentialProviderService() {
             ),
         )
     }
+
+    private fun createRpId(requestJson: String): String =
+        runCatching { JSONObject(requestJson).optJSONObject("rp")?.optString("id", "") }.getOrNull().orEmpty()
 
     // Mutable PendingIntent into the fulfill Activity (the framework attaches the request extras).
     private fun fulfillPendingIntent(requestCode: Int, intent: Intent): PendingIntent {

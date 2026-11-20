@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deviceNamer, fullStamp, shortStamp } from "./sync-log";
+import { deviceNamer, fullStamp, shortKey, shortStamp } from "./sync-log";
 
 // Local time, so the expectations below hold in any time zone the tests run in.
 const AT = new Date(2026, 10, 14, 4, 41, 23).getTime();
@@ -15,6 +15,12 @@ describe("log stamps", () => {
 
 	it("dates a line from another day", () => {
 		expect(shortStamp(AT, new Date(2026, 10, 15, 0, 0, 1).getTime())).toBe("2026-11-14 04:41:23");
+	});
+});
+
+describe("short device keys", () => {
+	it("keeps every character, so the roster matches the log (#243)", () => {
+		expect(shortKey("tG/Lnb18+9xQ==")).toBe("tG/Lnb18");
 	});
 });
 

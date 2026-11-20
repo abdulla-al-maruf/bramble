@@ -20,6 +20,7 @@ import { startBackupSchedule } from "./backup";
 import { forwardConsoleToLog } from "./log-forward";
 import { installNativeWebRtc } from "./native-webrtc";
 import { initRosterSync } from "./sync/roster";
+import { onTotpHandoff } from "./totp-handoff";
 import { listenForMenuUpdateCheck, promptForUpdateOnLaunch } from "./updates-prompt";
 import { installWindowShortcuts, syncTrayTheme } from "./window-chrome";
 
@@ -50,6 +51,7 @@ function Root() {
 	// "app" = vault/unlock UI; the rest render OptionsApp and dismiss back to "app".
 	// One window, so these are views rather than the extension's separate options page.
 	const [view, setView] = useState<"app" | "setup" | "import" | "restore">("app");
+	const [pendingTotp, setPendingTotp] = useState<{ uri: string } | null>(null);
 
 	useEffect(
 		() =>
@@ -77,6 +79,10 @@ function Root() {
 	// The menu's "Check for Updates…", which is where people look for it rather than in Settings.
 	useEffect(() => listenForMenuUpdateCheck(), []);
 
+	// A 2FA key from a setup link, with Bramble picked under Set Up Codes In. App routes it once
+	// the vault is unlocked.
+	useEffect(() => onTotpHandoff((uri) => setPendingTotp({ uri })), []);
+
 	// Locking clears the search index, so a panel left open would go on accepting typing and
 	// answering "No matches" to everything the vault still holds. Dismiss it instead: the hotkey
 	// already routes to this window while locked, so there is a way back.
@@ -88,7 +94,7 @@ function Root() {
 		[],
 	);
 
-	if (view === "app") return <App />;
+	if (view === "app") return <App pendingTotp={pendingTotp ?? undefined} />;
 	return (
 		<OptionsApp
 			onComplete={() => setView("app")}

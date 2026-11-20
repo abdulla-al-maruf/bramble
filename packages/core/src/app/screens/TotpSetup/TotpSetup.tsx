@@ -1,17 +1,21 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { AlertTriangle, KeyRound, type LucideIcon, Plus, Search, ShieldCheck } from "lucide-react";
-import type { QrScanFailure } from "../../../util/totp";
+import { AlertTriangle, KeyRound, type LucideIcon, Search, ShieldCheck } from "lucide-react";
+import { type ReactNode, useState } from "react";
+import type { ParsedTotp, QrScanFailure } from "../../../util/totp";
+import { TotpCode } from "../../components/TotpCode";
 import { Button } from "../../components/ui/button";
+import { InlineConfirm } from "../../components/ui/inline-confirm";
+import { Segmented, SegmentedTab } from "../../components/ui/segmented";
 import { TextField } from "../../components/ui/text-field";
 
-/** One login the handed-over key could be saved against. */
+/** One login the handed-over key could be saved to. */
 export interface TotpTarget {
 	id: string;
 	name: string;
 	secondary: string;
 	icon: LucideIcon;
 	initials?: string;
-	/** This login already holds an authenticator key, so picking it replaces a working one. */
+	/** This login already holds an authenticator key, so saving here replaces a working one. */
 	hasTotp: boolean;
 }
 
@@ -19,112 +23,235 @@ interface TotpSetupProps {
 	/** Issuer and account parsed out of the key; both are blank for a bare setup key. */
 	issuer: string;
 	account: string;
-	/** Existing logins, already filtered by `query` and sorted. */
-	targets: TotpTarget[];
+	totp: ParsedTotp["totp"];
+	copied: boolean;
+	onCopy: (code: string) => void;
+	/** Logins that look like this key's site, shown before any search. */
+	suggested: TotpTarget[];
+	/** Logins matching `query`; empty while there is no query. */
+	results: TotpTarget[];
 	query: string;
 	onQueryChange: (q: string) => void;
-	onCreateNew: () => void;
-	onPick: (id: string) => void;
+	onAdd: (id: string) => Promise<void>;
+	onCreateNew: (name: string, username: string) => Promise<void>;
 }
 
 /**
- * Where should a handed-over authenticator key go? Shown when another app or a website
- * sends Bramble an `otpauth://` URI (iOS "Set Up Codes In", an Android `otpauth://`
- * intent). It never saves anything itself: both legs land on a form the user submits,
- * which is what keeps an entry point any app on the device can fire from writing to the
- * vault. See docs/totp-uri-handler.md.
+ * Saves an authenticator key another app or a website handed over (Set Up Codes In on iOS and
+ * macOS, an Android `otpauth://` intent). Nothing is written until the user taps a save on this
+ * screen, which names the login it goes to: an entry point any app can fire must not write to
+ * the vault by itself. See docs/totp-uri-handler.md.
  */
 export function TotpSetup({
 	issuer,
 	account,
-	targets,
+	totp,
+	copied,
+	onCopy,
+	suggested,
+	results,
 	query,
 	onQueryChange,
+	onAdd,
 	onCreateNew,
-	onPick,
 }: TotpSetupProps) {
 	const { t } = useLingui();
-	// A bare setup key carries neither, so the header falls back to naming the kind of
-	// thing that arrived rather than showing an empty line.
-	const title = issuer || account || t`Authenticator key`;
-	const subtitle = issuer && account ? account : "";
+	// Opens where the likely answer is: an existing login if one matches, a new one otherwise.
+	const [tab, setTab] = useState<"existing" | "new">(suggested.length > 0 ? "existing" : "new");
+	const [name, setName] = useState(issuer || account || t`2FA code`);
+	const [username, setUsername] = useState(account);
+	// "new" or the id being saved to; one save at a time.
+	const [busy, setBusy] = useState<string | null>(null);
+	const [failed, setFailed] = useState(false);
+	const about = [issuer, account].filter(Boolean).join(" · ");
+	const searching = query.trim() !== "";
+
+	const run = async (key: string, save: () => Promise<void>) => {
+		setBusy(key);
+		setFailed(false);
+		try {
+			await save();
+		} catch {
+			setFailed(true);
+			setBusy(null);
+		}
+	};
+	const add = (id: string) => run(id, () => onAdd(id));
 
 	return (
 		<main className="flex-1 min-h-0 flex flex-col w-full max-w-5xl mx-auto px-4 py-5">
-			<div className="mb-5 flex items-start gap-3">
+			<div className="mb-4 flex items-start gap-3">
 				<div className="shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
 					<ShieldCheck className="w-5 h-5 text-primary" />
 				</div>
 				<div className="min-w-0">
-					<h2 className="text-base truncate">{title}</h2>
-					{subtitle && <p className="text-sm text-muted-foreground truncate">{subtitle}</p>}
-					<p className="text-sm text-muted-foreground mt-0.5">
-						<Trans>Choose where to save this 2FA code.</Trans>
-					</p>
+					<h2 className="text-base">
+						<Trans>Add 2FA code</Trans>
+					</h2>
+					{about && <p className="text-sm text-muted-foreground truncate">{about}</p>}
 				</div>
 			</div>
 
-			<Button
-				variant="secondary"
-				fullWidth
-				onClick={onCreateNew}
-				className="mb-5 flex items-center justify-center gap-2"
-			>
-				<Plus className="w-4 h-4" />
-				<Trans>Save to a new login</Trans>
-			</Button>
+			<section className="mb-4 rounded-lg border border-border/50 bg-card/50 px-4 py-3 space-y-1">
+				<p className="text-xs text-muted-foreground">
+					<Trans>Current code</Trans>
+				</p>
+				<TotpCode totp={totp} copied={copied} onCopy={onCopy} />
+				<p className="text-xs text-muted-foreground">
+					<Trans>If the site asks for a code to finish setting up, enter this one.</Trans>
+				</p>
+			</section>
 
-			<p className="mb-2 px-1 text-xs font-medium text-muted-foreground">
-				<Trans>Or add it to an existing login</Trans>
-			</p>
+			<Segmented className="mb-4">
+				<SegmentedTab
+					active={tab === "existing"}
+					disabled={busy !== null}
+					onClick={() => setTab("existing")}
+				>
+					<Trans>Existing login</Trans>
+				</SegmentedTab>
+				<SegmentedTab active={tab === "new"} disabled={busy !== null} onClick={() => setTab("new")}>
+					<Trans>New login</Trans>
+				</SegmentedTab>
+			</Segmented>
 
-			<TextField
-				label={t`Search logins`}
-				type="search"
-				value={query}
-				onChange={(e) => onQueryChange(e.target.value)}
-				startAdornment={<Search className="w-4 h-4" />}
-				className="mb-3"
-			/>
+			{tab === "existing" ? (
+				<>
+					<TextField
+						label={t`Search your logins`}
+						type="search"
+						value={query}
+						onChange={(e) => onQueryChange(e.target.value)}
+						startAdornment={<Search className="w-4 h-4" />}
+						className="mb-3"
+					/>
+					<div className="flex-1 min-h-0 overflow-y-auto">
+						{searching ? (
+							results.length > 0 ? (
+								<TargetList targets={results} busy={busy} onAdd={add} />
+							) : (
+								<Hint>
+									<Trans>No logins match.</Trans>
+								</Hint>
+							)
+						) : suggested.length > 0 ? (
+							<>
+								<p className="mb-2 px-1 text-xs font-medium text-muted-foreground">
+									<Trans>Suggested</Trans>
+								</p>
+								<TargetList targets={suggested} busy={busy} onAdd={add} />
+							</>
+						) : (
+							<Hint>
+								<Trans>Search for the login to add the code to.</Trans>
+							</Hint>
+						)}
+					</div>
+				</>
+			) : (
+				<form
+					className="space-y-3"
+					onSubmit={(e) => {
+						e.preventDefault();
+						void run("new", () => onCreateNew(name.trim(), username.trim()));
+					}}
+				>
+					<TextField label={t`Name`} value={name} onChange={(e) => setName(e.target.value)} />
+					<TextField
+						label={t`Username`}
+						value={username}
+						onChange={(e) => setUsername(e.target.value)}
+					/>
+					<Button
+						type="submit"
+						variant="primary"
+						fullWidth
+						disabled={busy !== null || !name.trim()}
+					>
+						{busy === "new" ? <Trans>Saving…</Trans> : <Trans>Save new login</Trans>}
+					</Button>
+				</form>
+			)}
 
-			<div className="flex-1 min-h-0 overflow-y-auto">
-				{targets.length === 0 ? (
-					<p className="py-8 text-center text-sm text-muted-foreground">
-						<Trans>No logins match.</Trans>
-					</p>
-				) : (
-					<ul className="space-y-1">
-						{targets.map((target) => (
-							<li key={target.id}>
-								<button
-									type="button"
-									onClick={() => onPick(target.id)}
-									className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-border/50 bg-card/50 text-left transition-colors hover:border-border hover:bg-card active:scale-[0.99]"
-								>
-									<span className="shrink-0 w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-xs text-muted-foreground">
-										{target.initials ?? <target.icon className="w-4 h-4" />}
-									</span>
-									<span className="min-w-0 flex-1">
-										<span className="block truncate text-sm">{target.name}</span>
-										<span className="block truncate text-xs text-muted-foreground">
-											{target.secondary}
-										</span>
-									</span>
-									{/* Named at the point of decision, not after: picking this login overwrites a
-									    key that is presumably working, and the edit form would not say so. */}
-									{target.hasTotp && (
-										<span className="shrink-0 flex items-center gap-1 text-xs text-warning">
-											<AlertTriangle className="w-3.5 h-3.5" />
-											<Trans>Replaces code</Trans>
-										</span>
-									)}
-								</button>
-							</li>
-						))}
-					</ul>
-				)}
-			</div>
+			{failed && (
+				<p role="alert" className="mt-3 px-1 text-sm text-destructive">
+					<Trans>Couldn't save the 2FA code. Try again.</Trans>
+				</p>
+			)}
 		</main>
+	);
+}
+
+function Hint({ children }: { children: ReactNode }) {
+	return <p className="py-8 text-center text-sm text-muted-foreground">{children}</p>;
+}
+
+function TargetList({
+	targets,
+	busy,
+	onAdd,
+}: {
+	targets: TotpTarget[];
+	busy: string | null;
+	onAdd: (id: string) => Promise<void>;
+}) {
+	const { t } = useLingui();
+	return (
+		<ul className="space-y-1">
+			{targets.map((target) => (
+				<li
+					key={target.id}
+					className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-border/50 bg-card/50"
+				>
+					<span className="shrink-0 w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-xs text-muted-foreground">
+						{target.initials ?? <target.icon className="w-4 h-4" />}
+					</span>
+					<span className="min-w-0 flex-1">
+						<span className="block truncate text-sm">{target.name}</span>
+						<span className="block truncate text-xs text-muted-foreground">{target.secondary}</span>
+					</span>
+					{/* Asked here, not after: replacing loses a key that presumably still works. The
+					    question shows only where it fits beside the buttons without pushing the name out. */}
+					{target.hasTotp ? (
+						<InlineConfirm
+							className="shrink-0"
+							variant="destructiveOutline"
+							prompt={
+								<span className="hidden sm:flex items-center gap-1 text-warning">
+									<AlertTriangle className="w-3.5 h-3.5" />
+									<Trans>Replace its code?</Trans>
+								</span>
+							}
+							confirmLabel={<Trans>Replace</Trans>}
+							busyLabel={<Trans>Replacing…</Trans>}
+							onConfirm={() => onAdd(target.id)}
+							trigger={(arm) => (
+								<Button
+									variant="secondary"
+									size="sm"
+									disabled={busy !== null}
+									onClick={arm}
+									aria-label={t`Replace the 2FA code in ${target.name}`}
+								>
+									<Trans>Replace</Trans>
+								</Button>
+							)}
+						/>
+					) : (
+						<Button
+							variant="secondary"
+							size="sm"
+							className="shrink-0"
+							disabled={busy !== null}
+							onClick={() => void onAdd(target.id)}
+							aria-label={t`Add the 2FA code to ${target.name}`}
+						>
+							{busy === target.id ? <Trans>Adding…</Trans> : <Trans>Add</Trans>}
+						</Button>
+					)}
+				</li>
+			))}
+		</ul>
 	);
 }
 

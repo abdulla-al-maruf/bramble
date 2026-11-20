@@ -131,6 +131,19 @@ describe("handleCreate", () => {
 		expect(d.crypto.passkeyMakeCredential).not.toHaveBeenCalled();
 	});
 
+	it("refuses a create for bramble.sh before any ceremony", async () => {
+		const d = deps();
+		const res = await handleCreate(
+			d,
+			1,
+			createJson({ origin: "https://bramble.sh", rp: { id: "bramble.sh", name: "Vault" } }),
+			caller("https://bramble.sh"),
+		);
+		expect(res.error?.name).toBe("NotAllowedError");
+		expect(d.ceremony).not.toHaveBeenCalled();
+		expect(d.crypto.passkeyMakeCredential).not.toHaveBeenCalled();
+	});
+
 	it("rejects when ES256 is not offered", async () => {
 		const res = await handleCreate(
 			deps(),
@@ -247,6 +260,18 @@ describe("handleGet", () => {
 		expect(res.error?.name).toBe("NotAllowedError");
 	});
 
+	it("refuses a get for bramble.sh before any ceremony", async () => {
+		const d = deps();
+		const res = await handleGet(
+			d,
+			1,
+			getJson({ origin: "https://bramble.sh", rpId: "bramble.sh" }),
+			caller("https://bramble.sh"),
+		);
+		expect(res.error?.name).toBe("NotAllowedError");
+		expect(d.ceremony).not.toHaveBeenCalled();
+	});
+
 	it("rejects a cross-origin rpId with SecurityError", async () => {
 		const res = await handleGet(deps(), 1, getJson(), caller("https://evil.com"));
 		expect(res.error?.name).toBe("SecurityError");
@@ -291,7 +316,8 @@ describe("PRF", () => {
 		const d = deps();
 		await handleCreate(d, 1, createJson(), caller("https://github.com"));
 		const plan = vi.mocked(d.savePlacement).mock.calls[0]?.[0];
-		if (plan?.kind !== "create") throw new Error("expected a new login");
+		if (plan?.kind !== "create" || plan.data.type !== "login")
+			throw new Error("expected a new login");
 		expect(plan.data.passkeys?.[0]?.prf).toEqual({ credWithUV: "V1VW", credWithoutUV: "Tk9VVg==" });
 	});
 

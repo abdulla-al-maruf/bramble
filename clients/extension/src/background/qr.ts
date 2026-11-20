@@ -1,12 +1,13 @@
 /// <reference types="chrome" />
 
+import { lastNormalWindow } from "../normal-window";
 import { api } from "../platform-api";
 import { sendToOffscreen } from "./offscreen-client";
 import { type MessageEnvelope, on } from "./router";
 
 async function captureQrScan(): Promise<MessageEnvelope> {
-	// Filter to normal windows so a detached pop-out resolves the real browsing tab.
-	const win = await api.windows.getLastFocused({ windowTypes: ["normal"] });
+	// The browsing window, not a detached pop-out in front of it.
+	const win = await lastNormalWindow();
 	if (win?.id === undefined) {
 		return { ok: false, error: "No browser window to capture" };
 	}

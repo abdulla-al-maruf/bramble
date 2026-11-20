@@ -172,3 +172,26 @@ describe("turning the master password off on a synced vault", () => {
 		expect(screen.queryByText(/Pairing devices needs a master password/)).toBeNull();
 	});
 });
+
+describe("turning the master password off when Bramble Desktop holds the only key", () => {
+	const toggle = () =>
+		screen.getByRole("button", { name: "Require master password to unlock" }) as HTMLButtonElement;
+
+	it("is not offered, and says why", () => {
+		h.webauthnKeys = [
+			{ slotIdB64: "AA==", label: "Touch ID", addedAt: 1, kind: "platform", heldByBramble: true },
+		];
+		mount();
+		expect(toggle().disabled).toBe(true);
+		expect(screen.getByText(/Add a key outside Bramble Desktop/)).toBeTruthy();
+	});
+
+	it("is offered once another key is added", () => {
+		h.webauthnKeys = [
+			{ slotIdB64: "AA==", label: "Touch ID", addedAt: 1, kind: "platform", heldByBramble: true },
+			{ slotIdB64: "AQ==", label: "YubiKey", addedAt: 2, kind: "securityKey" },
+		];
+		mount();
+		expect(toggle().disabled).toBe(false);
+	});
+});

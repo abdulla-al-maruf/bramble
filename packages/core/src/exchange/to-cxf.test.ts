@@ -54,6 +54,17 @@ describe("toCxf: envelope", () => {
 		expect(payload.timestamp).toBe(1760);
 	});
 
+	it("leaves the browser extension's unlock key out", () => {
+		const unlockKey = {
+			id: "u",
+			type: "unlock-key",
+			name: "bramble.sh",
+			passkey: {},
+		} as unknown as Entry;
+		const { payload } = toCxf([login(), unlockKey], OPTS);
+		expect(payload.accounts?.[0]?.items).toHaveLength(1);
+	});
+
 	it("puts every entry under one account, since a local vault has no account identity", () => {
 		const { payload } = toCxf([login(), login({ id: "e2", name: "Fastmail" })], OPTS);
 		expect(payload.accounts).toHaveLength(1);

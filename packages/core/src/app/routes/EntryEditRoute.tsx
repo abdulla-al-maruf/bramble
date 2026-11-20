@@ -6,7 +6,6 @@ import { checkPasswordBreach } from "../../util/pwned";
 import { getEntryMode } from "../entry-modes";
 import { usePopOut } from "../hooks/usePopOut";
 import { useRouteBack } from "../hooks/useRouteBack";
-import { takeTotpForEntry } from "../pending-totp";
 import { EntryForm, type EntryFormDraft } from "../screens/CreateEntry/EntryForm";
 import { type EditDraft, readEditDraft } from "./edit-draft";
 
@@ -21,26 +20,20 @@ export function EntryEditRoute() {
 	const back = useRouteBack();
 	// Pop-out draft takes precedence over the stored entry; consumed once on mount.
 	const [draft] = useState(() => readEditDraft(takeInitialDraft()));
-	const stored = entries.find((e) => e.id === entryId);
+	const entry = entries.find((e) => e.id === entryId);
 	// The version the form opened, which the save supersedes: a pop-out keeps the original's,
 	// otherwise it's taken on the first render the entry exists, the one the form's values come from.
 	const openedRef = useRef<{ version?: OpenedVersion } | null>(
 		draft?.opened ? { version: draft.opened } : null,
 	);
-	if (openedRef.current === null && stored) openedRef.current = { version: openVersion(entryId) };
+	if (openedRef.current === null && entry) openedRef.current = { version: openVersion(entryId) };
 	const opened = openedRef.current?.version;
 	const registerDraft = useCallback(
 		(getter: (() => EntryFormDraft) | null) =>
 			registerDraftGetter(getter && ((): EditDraft => ({ values: getter(), opened }))),
 		[registerDraftGetter, opened],
 	);
-	// An authenticator key routed here from the TOTP setup screen. Seeded into the form
-	// rather than written: an OS handoff never saves on its own. See docs/totp-uri-handler.md.
-	const [handedTotp] = useState(() => takeTotpForEntry(entryId));
-
-	if (!stored) return null;
-
-	const entry = handedTotp && stored.type === "login" ? { ...stored, totp: handedTotp } : stored;
+	if (!entry) return null;
 
 	const mode = getEntryMode(entry.type);
 

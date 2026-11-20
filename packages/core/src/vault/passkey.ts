@@ -6,9 +6,15 @@
 // See docs/passkey-provider.md.
 
 import { z } from "zod";
-import type { Entry, LoginEntryData, PasskeyCredential } from "../hooks/useVault";
+import type {
+	Entry,
+	LoginEntryData,
+	PasskeyCredential,
+	UnlockKeyEntryData,
+} from "../hooks/useVault";
 import { base64ToBytes } from "../util/bytes";
 import { extractHostname } from "./autofill-index";
+import { isReservedRpId } from "./reserved-rp";
 
 /** COSE algorithm identifier for ES256, the only algorithm Bramble MINTS. */
 export const COSE_ES256 = -7;
@@ -70,6 +76,7 @@ export function findPasskeys(
 	rpId: string,
 	allowCredentialIds?: string[],
 ): PasskeyMatch[] {
+	if (isReservedRpId(rpId)) return [];
 	const allow = allowCredentialIds?.length ? new Set(allowCredentialIds) : null;
 	const matches: PasskeyMatch[] = [];
 	for (const entry of entries) {
@@ -139,7 +146,7 @@ export function passkeyAttachTarget(
  */
 export type PasskeyPlacement =
 	| { kind: "attach"; entryId: string; passkey: PasskeyCredential }
-	| { kind: "create"; data: LoginEntryData };
+	| { kind: "create"; data: LoginEntryData | UnlockKeyEntryData };
 
 /** A login's passkeys with `passkey` added, replacing one with the same credential id. */
 export function withPasskey(
@@ -183,6 +190,9 @@ export function planPasskeyPlacement(
 	rpName: string | undefined,
 	passkey: PasskeyCredential,
 ): PasskeyPlacement {
+	// The browser extension's own Touch ID key: its own hidden entry, never on a login.
+	if (isReservedRpId(rpId))
+		return { kind: "create", data: { type: "unlock-key", name: rpId, passkey } };
 	const target = passkeyAttachTarget(entries, rpId, passkey.userName);
 	return target ? attachPasskeyTo(target, passkey) : newPasskeyLogin(rpId, rpName, passkey);
 }

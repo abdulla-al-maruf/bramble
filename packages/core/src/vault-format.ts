@@ -103,6 +103,9 @@ export const EncryptedEntrySchema = z.object({
 	// Causal history (docs/sync-conflicts.md). Absent on a version from an older build.
 	vv: VersionVectorSchema.optional(),
 	floor: HlcSchema.optional(),
+	// Never sent off this device (sync, link, mailbox, combine). In the clear so sync can filter
+	// without decrypting. See docs/macos-credential-provider.md.
+	localOnly: z.literal(true).optional(),
 });
 export type EncryptedEntry = z.infer<typeof EncryptedEntrySchema>;
 

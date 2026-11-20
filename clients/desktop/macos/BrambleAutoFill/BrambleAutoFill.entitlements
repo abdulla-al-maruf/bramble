@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.application-identifier</key>
+	<string>BHGR3PP64J.app.bramble.desktop.autofill</string>
+	<key>com.apple.developer.team-identifier</key>
+	<string>BHGR3PP64J</string>
+	<key>com.apple.developer.authentication-services.autofill-credential-provider</key>
+	<true/>
+	<!-- Required, and the one Xcode adds invisibly for an extension target. A macOS app
+	     extension MUST be sandboxed: without this the appex is signed, notarized and registered
+	     with Launch Services, and still never appears in AutoFill & Passwords. -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>BHGR3PP64J.group.app.bramble.desktop</string>
+	</array>
+	<!-- The app's group, where its Touch ID items live (biometric_macos.rs), read-only here. -->
+	<key>keychain-access-groups</key>
+	<array>
+		<string>BHGR3PP64J.app.bramble.desktop</string>
+		<string>BHGR3PP64J.app.bramble.desktop.shared</string>
+	</array>
+</dict>
+</plist>

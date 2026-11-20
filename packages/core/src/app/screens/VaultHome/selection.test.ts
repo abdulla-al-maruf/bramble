@@ -4,6 +4,7 @@ import {
 	hiddenSelectedCount,
 	pruneSelection,
 	selectAll,
+	selectRange,
 	toggleSelected,
 } from "./selection";
 
@@ -17,6 +18,27 @@ describe("toggleSelected", () => {
 
 	it("removes a selected id", () => {
 		expect([...toggleSelected(sel("a", "b"), "a")]).toEqual(["b"]);
+	});
+});
+
+describe("selectRange (#220)", () => {
+	const list = items("a", "b", "c", "d", "e");
+
+	it("selects every row from the anchor to the clicked one, either way up", () => {
+		expect([...selectRange(sel("b"), list, "b", "d")].sort()).toEqual(["b", "c", "d"]);
+		expect([...selectRange(sel("d"), list, "d", "b")].sort()).toEqual(["b", "c", "d"]);
+	});
+
+	it("keeps what was selected outside the range", () => {
+		expect([...selectRange(sel("a", "e"), list, "b", "c")].sort()).toEqual(["a", "b", "c", "e"]);
+	});
+
+	it("clears the range when the clicked row was already selected", () => {
+		expect([...selectRange(sel("a", "b", "c", "d"), list, "a", "c")].sort()).toEqual(["d"]);
+	});
+
+	it("only toggles the clicked row when the anchor isn't in the list", () => {
+		expect([...selectRange(sel("x"), list, "x", "c")].sort()).toEqual(["c", "x"]);
 	});
 });
 

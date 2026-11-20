@@ -152,6 +152,47 @@
         }
       }
     },
+    "Can't save here": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speichern hier nicht möglich"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se puede guardar aquí"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible d'enregistrer ici"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não é possível salvar aqui"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile salvare qui"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "여기에 저장할 수 없음"
+          }
+        }
+      }
+    },
     "Cancel": {
       "localizations": {
         "de": {
@@ -1751,6 +1792,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "এই ডিভাইসে সেভ করা কি পুরোনো হয়ে গেছে। আপনার মাস্টার পাসওয়ার্ড দিন।"
+          }
+        }
+      }
+    },
+    "This key unlocks Bramble, so it can't be kept in Bramble. Choose Passwords instead.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Schlüssel entsperrt Bramble und kann daher nicht in Bramble aufbewahrt werden. Wählen Sie stattdessen Passwörter."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta clave desbloquea Bramble, por lo que no puede guardarse en Bramble. Elija Contraseñas en su lugar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cette clé déverrouille Bramble et ne peut donc pas y être conservée. Choisissez plutôt Mots de passe."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta chave desbloqueia o Bramble, então não pode ser mantida no Bramble. Em vez disso, escolha o app Senhas."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questa chiave sblocca Bramble, quindi non può essere conservata in Bramble. Scelga invece Password."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 키는 Bramble을 잠금 해제하므로 Bramble에 보관할 수 없습니다. 대신 비밀번호를 선택하십시오."
           }
         }
       }

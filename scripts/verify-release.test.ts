@@ -1,6 +1,10 @@
 // node --test scripts/verify-release.test.ts
 
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, it } from "node:test";
 import { deflateRawSync } from "node:zlib";
 import {
@@ -9,6 +13,7 @@ import {
 	canonicalManifest,
 	compareTrees,
 	crxZip,
+	extractTag,
 	inReleaseZip,
 	manifestDiff,
 	parseTag,
@@ -244,4 +249,39 @@ describe("manifestDiff", () => {
 	it("keeps paths with spaces whole", () => {
 		assert.deepEqual(manifestDiff("aa 644 a b/c d\n", "aa 644 a b/c d\n"), []);
 	});
+});
+
+describe("extractTag", () => {
+	const scratch = mkdtempSync(join(tmpdir(), "verify-release-test-"));
+	const repo = join(scratch, "repo");
+	mkdirSync(repo);
+	const git = (...args: string[]) =>
+		execFileSync("git", ["-C", repo, "-c", "user.name=t", "-c", "user.email=t@t", ...args]);
+	git("init", "-q");
+	writeFileSync(join(repo, "kept.txt"), "tagged\n");
+	git("add", ".");
+	git("commit", "-qm", "one");
+	git("tag", "1.0.0-desktop");
+	writeFileSync(join(repo, "later.txt"), "after the tag\n");
+	git("add", ".");
+	git("commit", "-qm", "two");
+
+	it("unpacks the tree the tag points at", () => {
+		const dir = join(scratch, "src");
+		mkdirSync(dir);
+		extractTag(repo, "1.0.0-desktop", dir);
+		assert.equal(readFileSync(join(dir, "kept.txt"), "utf8"), "tagged\n");
+		assert.equal(existsSync(join(dir, "later.txt")), false);
+		assert.equal(existsSync(`${dir}.tar`), false);
+	});
+
+	it("refuses a tag that is not there, and never hands it to a shell", () => {
+		const dir = join(scratch, "hostile");
+		mkdirSync(dir);
+		const marker = join(scratch, "ran");
+		assert.throws(() => extractTag(repo, `x"; touch "${marker}"; echo "`, dir), /no tag/);
+		assert.equal(existsSync(marker), false);
+	});
+
+	process.on("exit", () => rmSync(scratch, { recursive: true, force: true }));
 });

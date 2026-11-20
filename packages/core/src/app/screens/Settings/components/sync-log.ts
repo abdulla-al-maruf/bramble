@@ -25,6 +25,9 @@ export function shortStamp(at: number, now: number): string {
 /** Status lines name a device by the first 8 characters of its sync key. */
 const KEY_CHARS = 8;
 
+/** A device's key as the log and the device list show it. */
+export const shortKey = (publicKey: string): string => publicKey.slice(0, KEY_CHARS);
+
 const escapeRegExp = (s: string): string => s.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
 
 /**
@@ -36,7 +39,7 @@ export function deviceNamer(
 ): (line: string) => string {
 	const names = new Map<string, string>();
 	for (const { publicKey, name } of devices) {
-		if (publicKey.length >= KEY_CHARS && name) names.set(publicKey.slice(0, KEY_CHARS), name);
+		if (publicKey.length >= KEY_CHARS && name) names.set(shortKey(publicKey), name);
 	}
 	if (names.size === 0) return (line) => line;
 	const keys = [...names.keys()].map(escapeRegExp).join("|");

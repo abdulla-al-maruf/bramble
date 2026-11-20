@@ -19,6 +19,7 @@ import {
 import {
 	addWebauthnSlot,
 	describeWebauthnKeys,
+	isHeldByBramble,
 	matchSlotByCredentialId,
 	removePasswordSlot,
 	removeWebauthnSlot,
@@ -275,6 +276,45 @@ describe("removePasswordSlot", () => {
 		const before = blob.slots.length;
 		removePasswordSlot(blob);
 		expect(blob.slots.length).toBe(before);
+	});
+});
+
+// Bramble Desktop's AutoFill extension can hold the browser extension's Touch ID key. Unlocking
+// that key needs Bramble unlocked, so it never counts as the way back in on its own.
+describe("keys held by Bramble", () => {
+	function heldSlot(idBase: number): WebauthnSlot {
+		const slot = makeWebauthnSlot(idBase, 20);
+		slot.credentialId.set([0x42, 0x52, 0x4d, 0x55]);
+		return slot;
+	}
+
+	it("reads the prefix Bramble puts on the credential id", () => {
+		expect(isHeldByBramble(heldSlot(0x10).credentialId)).toBe(true);
+		expect(isHeldByBramble(makeWebauthnSlot(0x10).credentialId)).toBe(false);
+		expect(isHeldByBramble(new Uint8Array([0x42, 0x52]))).toBe(false);
+	});
+
+	it("the master password stays while every remaining key is held by Bramble", () => {
+		const blob = makeBlob([makePasswordSlot(), heldSlot(0x10), makeRecoverySlot()]);
+		expect(() => removePasswordSlot(blob)).toThrow(/Bramble Desktop/);
+		const withKey = makeBlob([makePasswordSlot(), heldSlot(0x10), makeWebauthnSlot(0x80)]);
+		expect(removePasswordSlot(withKey).slots).toHaveLength(2);
+	});
+
+	it("won't remove the last key Bramble doesn't hold from a vault without a password", () => {
+		const own = makeWebauthnSlot(0x80);
+		const blob = makeBlob([heldSlot(0x10), own]);
+		expect(() => removeWebauthnSlot(blob, own.slotId)).toThrow(/Bramble Desktop/);
+	});
+
+	it("marks the key in the list", () => {
+		const [held, own] = describeWebauthnKeys(
+			[heldSlot(0x10), makeWebauthnSlot(0x80)],
+			{},
+			(b) => `slot-${b[0]}`,
+		);
+		expect(held).toMatchObject({ heldByBramble: true });
+		expect(own).not.toHaveProperty("heldByBramble");
 	});
 });
 

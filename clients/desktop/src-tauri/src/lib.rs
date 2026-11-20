@@ -5,6 +5,7 @@
 //! spotlight window, auto-type, and the browser IPC. See docs/desktop-port.md.
 
 mod autolock;
+mod autofill_provider;
 mod autostart;
 mod backup;
 mod biometric;
@@ -24,6 +25,8 @@ mod menu;
 #[cfg(target_os = "linux")]
 mod native_webrtc;
 mod net;
+#[cfg(target_os = "macos")]
+mod otpauth;
 mod pairing;
 mod secure_store;
 mod socket;
@@ -252,6 +255,8 @@ pub fn run() {
             tray_theme,
             hide_to_tray,
             quit_app,
+            #[cfg(target_os = "macos")]
+            otpauth::totp_handoff_take,
             files::files_pick,
             files::files_seal,
             files::files_seal_bytes,
@@ -281,6 +286,10 @@ pub fn run() {
             biometric::biometric_enable,
             biometric::biometric_unlock,
             biometric::biometric_disable,
+            autofill_provider::autofill_provider_set,
+            autofill_provider::autofill_provider_clear,
+            autofill_provider::autofill_consume_pending_passkeys,
+            autofill_provider::autofill_restore_pending_passkeys,
             crypto::crypto_is_locked,
             crypto::crypto_lock,
             crypto::crypto_generate_vek,
@@ -411,6 +420,11 @@ pub fn run() {
         .run(|app, event| match event {
             #[cfg(target_os = "macos")]
             RunEvent::Reopen { .. } => lifetime::show_main(app),
+            // A 2FA setup link, with Bramble picked under Set Up Codes In. See `otpauth`.
+            #[cfg(target_os = "macos")]
+            RunEvent::Opened { urls } => otpauth::opened(app, &urls),
+            #[cfg(target_os = "macos")]
+            RunEvent::Ready => otpauth::started(),
             // `code: None` is the runtime asking to exit because the last window closed, which a
             // close on Wayland now really does destroy. The tray, the spotlight panel and the
             // backup schedule all outlive the vault window, so that request is refused and the

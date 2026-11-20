@@ -5,7 +5,7 @@
 // VLT1 binary container in vault-format.ts is unchanged.
 
 import { z } from "zod";
-import { EncryptedEntrySchema } from "../vault-format";
+import { type EncryptedEntry, EncryptedEntrySchema } from "../vault-format";
 import { isFutureVersion, VersionVectorSchema } from "./causal";
 import { HlcSchema, isFutureStamp } from "./hlc";
 import { BLOB_HASH_RE } from "./mailbox/protocol";
@@ -107,6 +107,22 @@ export type EntriesPayload = z.infer<typeof EntriesPayloadSchema>;
  * cascade marks have to be carried together or a delete is lost, and because every writer that
  * rebuilds a payload has to thread all three through. */
 export type FileManifest = Pick<EntriesPayload, "files" | "fileTombstones" | "fileCascades">;
+
+/** What may leave this device: everything but local-only entries (the hidden unlock key). */
+export function forSending(payload: EntriesPayload): EntriesPayload {
+	const shareable = (e: EncryptedEntry) => !e.localOnly;
+	return {
+		...payload,
+		entries: payload.entries.filter(shareable),
+		...(payload.conflicts ? { conflicts: payload.conflicts.filter(shareable) } : {}),
+	};
+}
+
+/** forSending on an encoded payload, untouched (and unparsed) when nothing in it is local-only. */
+export function outgoingPayload(json: string): string {
+	if (!json.includes('"localOnly"')) return json;
+	return encodeEntriesPayload(forSending(decodeEntriesPayload(json)));
+}
 
 /** An empty payload, for a fresh vault. */
 export function emptyEntriesPayload(): EntriesPayload {

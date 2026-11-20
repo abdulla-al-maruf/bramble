@@ -1,5 +1,5 @@
 import { RouterProvider } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePlatform } from "../context/PlatformContext";
 import { usePendingHandoffs } from "../hooks/usePendingHandoffs";
 import { PrefsProvider } from "../hooks/usePrefs";
@@ -13,9 +13,9 @@ import { ErrorBoundary } from "./ErrorBoundary";
 import { PopOutProvider } from "./hooks/usePopOut";
 import { concealSecrets } from "./hooks/useRevealState";
 import { ThemeProvider } from "./hooks/useTheme";
+import { type TotpHandoff, useTotpHandoffRoute } from "./hooks/useTotpHandoffRoute";
 import { LocaleGate } from "./LocaleGate";
 import { setPendingCreateEntry } from "./pending-create-entry";
-import { setPendingTotp } from "./pending-totp";
 import { type AppRouter, createAppRouter, persistableHref } from "./router";
 
 /** A credential the mobile autofill provider captured, to seed a prefilled add-login form. */
@@ -34,9 +34,9 @@ interface AppProps {
 	// Mobile only: a captured sign-in to save, surfaced as a prefilled add-login form
 	// once the vault is unlocked. Absent on desktop / the extension.
 	pendingLogin?: PendingLogin;
-	// Mobile only: an `otpauth://` key the OS handed over (iOS "Set Up Codes In", an
-	// Android otpauth:// intent), routed to the setup screen once unlocked.
-	pendingTotp?: string;
+	// An `otpauth://` key the OS handed over (Set Up Codes In on iOS and macOS, an Android
+	// otpauth:// intent), routed to the setup screen once unlocked.
+	pendingTotp?: TotpHandoff;
 	// BCP-47 tag the host detected (mobile reads Capacitor Device.getLanguageTag,
 	// which is reliable where WKWebView's navigator.language is clamped to the app
 	// bundle's localizations). Falls back to navigator.language.
@@ -59,14 +59,14 @@ function InnerApp({
 }: {
 	router: AppRouter;
 	pendingLogin?: PendingLogin;
-	pendingTotp?: string;
+	pendingTotp?: TotpHandoff;
 }) {
-	const { isLocked, ready, entries, unlockedWithRecoveryCode } = useVault();
+	const { isLocked, ready, entries, unlockedWithRecoveryCode, lockedByUser } = useVault();
 	const { ready: registryReady, vaults, activeId } = useVaultRegistry();
 	const { shell } = usePlatform();
 	const vault = useMemo(
-		() => ({ isLocked, ready, entries, unlockedWithRecoveryCode }),
-		[isLocked, ready, entries, unlockedWithRecoveryCode],
+		() => ({ isLocked, ready, entries, unlockedWithRecoveryCode, lockedByUser }),
+		[isLocked, ready, entries, unlockedWithRecoveryCode, lockedByUser],
 	);
 	// Registry slice for the launch-time picker decision.
 	const registry = useMemo(
@@ -77,7 +77,6 @@ function InnerApp({
 	// The key already routed, not a spent flag: setting up 2FA on a second site in the same
 	// session is ordinary, and a boolean would silently drop every handoff after the first.
 	// Comparing the key itself still refuses to route the SAME one twice.
-	const routedTotp = useRef<string | null>(null);
 
 	// Mobile: persist passkeys the native provider minted, and apply the associations
 	// a confirmed "fill and save" pick handed over.
@@ -150,16 +149,11 @@ function InnerApp({
 		void router.navigate({ to: "/vault/new/$type", params: { type: "login" } });
 	}, [pendingLogin, ready, isLocked, router]);
 
-	// TOTP handoff: an authenticator key another app sent us. Deferred past unlock for the
-	// same reason as the save handoff, and more often, since being launched from another app
-	// while locked is the NORMAL case here rather than the edge one. Parked rather than
-	// passed down, because the setup screen is a route component with no props to hand it to.
-	useEffect(() => {
-		if (!pendingTotp || !ready || isLocked || routedTotp.current === pendingTotp) return;
-		routedTotp.current = pendingTotp;
-		setPendingTotp(pendingTotp);
-		void router.navigate({ to: "/vault/totp-setup" });
-	}, [pendingTotp, ready, isLocked, router]);
+	const openTotpSetup = useCallback(
+		() => void router.navigate({ to: "/vault/totp-setup" }),
+		[router],
+	);
+	useTotpHandoffRoute(pendingTotp, ready && !isLocked, openTotpSetup);
 
 	return <RouterProvider router={router} context={{ vault, registry }} />;
 }

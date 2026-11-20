@@ -32,6 +32,11 @@ export function spendShortcutGrant(tabId: number | undefined): void {
 	if (tabId !== undefined) grants.delete(tabId);
 }
 
+/** One fill in this tab, as the shortcut grants. Also armed by a Fill in Bramble's own window. */
+export function armShortcutGrant(tabId: number, owner: AutofillSessionOwner): void {
+	grants.set(tabId, { owner, expiresAt: Date.now() + FILL_SHORTCUT_TTL_MS });
+}
+
 async function fillFromShortcut(tab: chrome.tabs.Tab | undefined): Promise<void> {
 	const tabId = tab?.id ?? (await api.tabs.query({ active: true, lastFocusedWindow: true }))[0]?.id;
 	if (tabId === undefined) return;
@@ -40,7 +45,7 @@ async function fillFromShortcut(tab: chrome.tabs.Tab | undefined): Promise<void>
 		await openUnlockView();
 		return;
 	}
-	grants.set(tabId, { owner, expiresAt: Date.now() + FILL_SHORTCUT_TTL_MS });
+	armShortcutGrant(tabId, owner);
 	// Every frame gets it; the one holding focus answers (content.ts, fillFromShortcut).
 	await api.tabs.sendMessage(tabId, { type: "AUTOFILL_SHORTCUT" }).catch(() => {});
 }

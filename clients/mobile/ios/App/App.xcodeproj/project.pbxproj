@@ -28,6 +28,8 @@
 		B100000000000000000B0003 /* NativeWebRTC.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000B0004 /* NativeWebRTC.swift */; };
 		AA1E7019A9755380A0B4D80A /* CredentialProviderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF834C57F536934CFEE77A5F /* CredentialProviderViewController.swift */; };
 		B100000000000000000C0011 /* Totp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000C0010 /* Totp.swift */; };
+		B100000000000000000C0021 /* AutofillCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000C0020 /* AutofillCore.swift */; };
+		B100000000000000000C0031 /* AutofillStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000C0030 /* AutofillStyle.swift */; };
 		B100000000000000000B0001 /* BiometricVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000A0001 /* BiometricVault.swift */; };
 		B100000000000000000B0002 /* QrScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000A0002 /* QrScanner.swift */; };
 		B100000000000000000B0007 /* CredentialExchange.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000A0003 /* CredentialExchange.swift */; };
@@ -91,6 +93,8 @@
 		B100000000000000000B0005 /* vault_crypto.autofill.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = vault_crypto.autofill.swift; sourceTree = "<group>"; };
 		FF834C57F536934CFEE77A5F /* CredentialProviderViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CredentialProviderViewController.swift; sourceTree = "<group>"; };
 		B100000000000000000C0010 /* Totp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Totp.swift; sourceTree = "<group>"; };
+		B100000000000000000C0020 /* AutofillCore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AutofillCore.swift; sourceTree = "<group>"; };
+		B100000000000000000C0030 /* AutofillStyle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AutofillStyle.swift; sourceTree = "<group>"; };
 		B100000000000000000C0001 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -135,6 +139,8 @@
 			children = (
 				FF834C57F536934CFEE77A5F /* CredentialProviderViewController.swift */,
 				B100000000000000000C0010 /* Totp.swift */,
+				B100000000000000000C0020 /* AutofillCore.swift */,
+				B100000000000000000C0030 /* AutofillStyle.swift */,
 				B100000000000000000C0001 /* Localizable.xcstrings */,
 				7032D4DE80695ED12D43BB6A /* Info.plist */,
 				3AE14515F7A8E1BEEA894346 /* AutoFillProbe.entitlements */,
@@ -338,6 +344,8 @@
 			files = (
 				AA1E7019A9755380A0B4D80A /* CredentialProviderViewController.swift in Sources */,
 				B100000000000000000C0011 /* Totp.swift in Sources */,
+				B100000000000000000C0021 /* AutofillCore.swift in Sources */,
+				B100000000000000000C0031 /* AutofillStyle.swift in Sources */,
 				B100000000000000000B0006 /* vault_crypto.autofill.swift in Sources */,
 				DA77030FEB0F1014AA5F80D0 /* BrambleConstants.swift in Sources */,
 				B100000000000000000D0003 /* AppGroupHandoff.swift in Sources */,

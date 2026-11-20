@@ -59,6 +59,15 @@ export async function lock(page: Page) {
 	await expect(page.getByRole("heading", { name: /master password to unlock/i })).toBeVisible();
 }
 
+/** Lock the way the idle timer does, by firing the background's auto-lock alarm. Unlike the Lock
+ * button, this keeps the screen the user was on for after the unlock. */
+export async function autoLock(context: BrowserContext, page: Page) {
+	const [sw] = context.serviceWorkers();
+	if (!sw) throw new Error("no extension service worker");
+	await sw.evaluate(() => chrome.alarms.create("vault:autolock", { when: Date.now() }));
+	await expect(page.getByRole("heading", { name: /master password to unlock/i })).toBeVisible();
+}
+
 /** Unlock the locked popup with the master password. */
 export async function unlock(page: Page, password = STRONG_PW) {
 	await page.locator('input[type="password"]').first().fill(password);

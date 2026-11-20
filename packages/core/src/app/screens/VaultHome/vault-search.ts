@@ -10,6 +10,7 @@ export type TypeFilter = (typeof TYPE_FILTERS)[number];
 const SORT_KEYS = [
 	"name-asc",
 	"name-desc",
+	"recent-activity",
 	"recent-used",
 	"recent-added",
 	"recent-updated",
@@ -122,11 +123,15 @@ function byName(a: SearchableEntry, b: SearchableEntry): number {
 	return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
 }
 
+type Stamp = "lastUsedAt" | "createdAt" | "updatedAt";
+
 // Missing timestamps sort last; ties fall back to name A->Z for a stable order.
-function byRecent(key: "lastUsedAt" | "createdAt" | "updatedAt") {
+function byRecent(...keys: Stamp[]) {
+	const latest = (e: SearchableEntry): number =>
+		Math.max(...keys.map((k) => e[k] ?? Number.NEGATIVE_INFINITY));
 	return (a: SearchableEntry, b: SearchableEntry): number => {
-		const av = a[key] ?? Number.NEGATIVE_INFINITY;
-		const bv = b[key] ?? Number.NEGATIVE_INFINITY;
+		const av = latest(a);
+		const bv = latest(b);
 		if (av !== bv) return bv - av;
 		return byName(a, b);
 	};
@@ -135,6 +140,7 @@ function byRecent(key: "lastUsedAt" | "createdAt" | "updatedAt") {
 const COMPARATORS: Record<SortKey, (a: SearchableEntry, b: SearchableEntry) => number> = {
 	"name-asc": byName,
 	"name-desc": (a, b) => byName(b, a),
+	"recent-activity": byRecent("lastUsedAt", "createdAt", "updatedAt"),
 	"recent-used": byRecent("lastUsedAt"),
 	"recent-added": byRecent("createdAt"),
 	"recent-updated": byRecent("updatedAt"),

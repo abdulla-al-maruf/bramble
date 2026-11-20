@@ -6,7 +6,7 @@
 
 import { z } from "zod";
 import { bytesToBase64 } from "../util/bytes";
-import { EntriesPayloadSchema } from "./entries-payload";
+import { EntriesPayloadSchema, forSending } from "./entries-payload";
 import { RosterPayloadSchema } from "./roster";
 
 const PAIRING_PREFIX = "bramble-pair-1.";
@@ -106,7 +106,8 @@ export type EnrollmentBundle = z.infer<typeof EnrollmentBundleSchema>;
 export type WireRecoverySlot = NonNullable<EnrollmentBundle["recoverySlots"]>[number];
 
 export function encodeEnrollmentBundle(bundle: EnrollmentBundle): string {
-	return JSON.stringify(EnrollmentBundleSchema.parse(bundle));
+	const parsed = EnrollmentBundleSchema.parse(bundle);
+	return JSON.stringify({ ...parsed, entries: forSending(parsed.entries) });
 }
 
 export function decodeEnrollmentBundle(json: string): EnrollmentBundle {

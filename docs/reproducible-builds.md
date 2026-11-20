@@ -10,7 +10,7 @@ does not show, and a build that does not match is evidence that something was ad
 | Chrome extension | Yes, every file | Daily in CI: what the Chrome Web Store serves, and the GitHub zip |
 | Android APK | Yes, every file but the signature | Daily in CI: the newest GitHub release |
 | Desktop, Linux | `.deb` and AppImage byte for byte from the release after 0.19.0, every installed file before it; RPM contents only | Daily in CI, amd64 and arm64: the newest GitHub release |
-| Desktop, macOS | The app and proxy binaries, signatures aside, from the release after 0.19.0 | By hand on a Mac (`--macos`); updates are transparency-logged |
+| Desktop, macOS | The app, proxy and AutoFill extension binaries, signatures aside, from the release after 0.19.0 | By hand on a Mac (`--macos`); updates are transparency-logged |
 | Desktop, Windows | The installer, signature aside, from its first release | By hand (`--windows`); updates are transparency-logged |
 | iOS app | Cannot be checked: the App Store re-encrypts every binary | No |
 
@@ -159,9 +159,15 @@ hoc signature. `verify-release.ts <version>-desktop --macos` removes the signatu
 compares what is left, with one field set aside: `codesign` grows `__LINKEDIT`'s `vmsize` to fit a
 signature and leaves it grown when the signature is removed, so `scripts/macho-normalize.ts` zeroes
 it on both sides. It needs the Xcode the release used (`xcode` in `desktop-release.yml`, 26.4 at
-the time of writing), since the linker is part of the output. It compares the two binaries, which
-hold the code and the web assets; the rest of the bundle (`Info.plist`, icons, the provisioning
-profile) is not yet compared.
+the time of writing), since the linker is part of the output. It compares the app and proxy
+binaries, which hold the code and the web assets, and the AutoFill extension's from the release
+that first ships it; the rest of the bundle (`Info.plist`, icons, the provisioning profiles) is not
+yet compared.
+
+The AutoFill extension is the one part that does not need the fixed path. `build-appex.mjs` links
+it without a debug map (`-Xlinker -S`): the map named the Rust staticlib by absolute path, and with
+it gone, two builds from different checkouts came out identical, `Info.plist` and compiled strings
+included.
 
 **Windows.** The installer used to be built natively on a Windows runner, which nobody without
 Windows and MSVC could repeat. It is now cross-compiled with `cargo-xwin` in

@@ -7,9 +7,12 @@ import {
 	emptyEntriesPayload,
 	encodeEntriesPayload,
 	type FileRecord,
+	forSending,
+	outgoingPayload,
 	sanitizeRemoteEntriesPayload,
 } from "./entries-payload";
 import { HLC_MAX_DRIFT_MS } from "./hlc";
+import { mergeEntriesPayload } from "./vault-merge";
 
 const entry = (id: string, wall: number): EncryptedEntry => ({
 	id,
@@ -186,5 +189,34 @@ describe("file manifest codec", () => {
 		expect(safe.files?.map((f) => f.id)).toEqual(["ok"]);
 		expect(safe.fileTombstones?.map((t) => t.id)).toEqual(["ok-t"]);
 		expect(safe.fileCascades?.map((t) => t.id)).toEqual(["ok-c"]);
+	});
+});
+
+describe("forSending", () => {
+	const local = { ...entry("u", 5), localOnly: true as const };
+
+	it("drops local-only entries and their conflicts", () => {
+		const out = forSending({
+			entries: [entry("a", 1), local],
+			tombstones: [],
+			conflicts: [{ ...local, hlc: { wall: 4, counter: 0, node: "dev" } }],
+		});
+		expect(out.entries.map((e) => e.id)).toEqual(["a"]);
+		expect(out.conflicts).toEqual([]);
+	});
+
+	it("keeps a local-only entry when a peer's payload lacks it, since only tombstones delete", () => {
+		const merged = mergeEntriesPayload(
+			{ entries: [entry("a", 1), local], tombstones: [] },
+			{ entries: [entry("a", 1)], tombstones: [] },
+		);
+		expect(merged.entries.map((e) => e.id).sort()).toEqual(["a", "u"]);
+	});
+
+	it("rewrites an encoded payload only when it holds a local-only entry", () => {
+		const plain = encodeEntriesPayload({ entries: [entry("a", 1)], tombstones: [] });
+		expect(outgoingPayload(plain)).toBe(plain);
+		const mixed = encodeEntriesPayload({ entries: [entry("a", 1), local], tombstones: [] });
+		expect(decodeEntriesPayload(outgoingPayload(mixed)).entries.map((e) => e.id)).toEqual(["a"]);
 	});
 });

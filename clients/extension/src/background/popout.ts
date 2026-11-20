@@ -1,11 +1,14 @@
 /// <reference types="chrome" />
 
 import { parseRegistry, VAULT_REGISTRY_KEY } from "@core/vault/vault-registry";
+import { lastNormalWindow } from "../normal-window";
 import { api } from "../platform-api";
+import { isExtensionSender } from "../sender";
 import {
 	ACTIVE_VAULT_SESSION_KEY,
 	CORNER_HANDOFF_KEY,
 	LAST_OPENED_VAULT_KEY,
+	POPOUT_ANCHOR_KEY,
 } from "../session-keys";
 import { extensionStorage } from "../storage";
 import { getAutoLockMinutes } from "./prefs";
@@ -141,6 +144,7 @@ async function popoutOpen(
 	if (created?.id !== undefined) {
 		// Track this window so the next pop-out request focuses it rather than duplicating.
 		await api.storage.session.set({ [POPOUT_WINDOW_KEY]: created.id });
+		if (anchor?.id !== undefined) await api.storage.session.set({ [POPOUT_ANCHOR_KEY]: anchor.id });
 		// An unlock-only pop-out closes itself once the vault opens (see closeUnlockPopout).
 		if (payload?.reason === "unlock") {
 			await api.storage.session.set({ [POPOUT_UNLOCK_WINDOW_KEY]: created.id });
@@ -189,5 +193,24 @@ async function popoutConsumeHandoff(): Promise<MessageEnvelope> {
 	return { ok: true, data: handoff };
 }
 
+/**
+ * Firefox keeps one saved size and position for all of its windows, and the pop-out overwrites
+ * them each time it moves or resizes (#225). Setting a normal window to the bounds it already has
+ * makes Firefox save that window's again, and nothing moves on screen. The pop-out asks for this
+ * once its own bounds settle (popout-bounds.ts).
+ */
+async function popoutBoundsSettled(
+	_message: unknown,
+	sender: chrome.runtime.MessageSender,
+): Promise<MessageEnvelope> {
+	if (!isExtensionSender(sender)) return { ok: false, error: "forbidden" };
+	const win = await lastNormalWindow();
+	if (win?.id === undefined || win.state !== "normal") return { ok: true };
+	const { left, top, width, height } = win;
+	await api.windows.update(win.id, { left, top, width, height }).catch(() => undefined);
+	return { ok: true };
+}
+
 on("POPOUT_OPEN", popoutOpen);
+on("POPOUT_BOUNDS_SETTLED", popoutBoundsSettled);
 on("POPOUT_CONSUME_HANDOFF", popoutConsumeHandoff);

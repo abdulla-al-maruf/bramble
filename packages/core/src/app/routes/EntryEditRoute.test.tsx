@@ -41,7 +41,6 @@ vi.mock("../hooks/usePopOut", () => ({
 	}),
 }));
 vi.mock("../hooks/useRouteBack", () => ({ useRouteBack: () => h.back }));
-vi.mock("../pending-totp", () => ({ takeTotpForEntry: () => undefined }));
 vi.mock("../entry-modes", () => ({ getEntryMode: () => ({ label: "Login" }) }));
 vi.mock("../screens/CreateEntry/EntryForm", () => ({
 	EntryForm: (props: FormProps) => {

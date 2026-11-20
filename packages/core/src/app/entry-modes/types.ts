@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import type { ComponentType } from "react";
 import type { FieldValues } from "react-hook-form";
-import type { BreachStatus, Entry, EntryData, EntryType } from "../../hooks/useVault";
+import type { BreachStatus, Entry, EntryData, VisibleEntryType } from "../../hooks/useVault";
 
 /** Props for a mode's form-body component; the host owns the form context and chrome. */
 export interface EntryFieldsProps {
@@ -49,7 +49,7 @@ interface EntryRowView {
  * add-menu, and routing all read from here.
  */
 export interface EntryMode {
-	type: EntryType;
+	type: VisibleEntryType;
 	// Human label, e.g. "Login". Used in the add-menu and headers.
 	label: string;
 	// Add-menu subtitle, e.g. "Credit or debit card".

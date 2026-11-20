@@ -5,7 +5,8 @@ import { usePlatform } from "../../../../context/PlatformContext";
 import { usePrefs } from "../../../../hooks/usePrefs";
 import { UPDATE_MANIFEST_URL } from "../../../app-update";
 import { Button } from "../../../components/ui/button";
-import { Row, Section, Toggle } from "./primitives";
+import { Toggle } from "../../../components/ui/toggle";
+import { Row, Section } from "./primitives";
 
 /**
  * Check for and install a new version of the app.

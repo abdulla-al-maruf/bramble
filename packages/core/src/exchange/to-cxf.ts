@@ -10,6 +10,7 @@ import { base64ToBase64Url, bytesToBase64Url } from "../util/bytes";
 import { parseTotp } from "../util/totp";
 import { withScheme } from "../util/url";
 import { COSE_ES256, isPrfSecret, keptExtensions } from "../vault/passkey";
+import { visibleEntries } from "../vault/visible";
 import { pkcs8FromScalar } from "./passkey-key";
 import {
 	CXF_VERSION,
@@ -260,7 +261,7 @@ function itemFor(e: Entry, warnings: string[]): CxfItem {
  */
 export function toCxf(entries: readonly Entry[], opts: CxfExportOptions): CxfExportResult {
 	const warnings: string[] = [];
-	const items = entries.map((e) => itemFor(e, warnings));
+	const items = visibleEntries(entries).map((e) => itemFor(e, warnings));
 	if (opts.passkeyExtensions === false) {
 		const n = withholdPasskeyExtensions(items);
 		if (n > 0) {

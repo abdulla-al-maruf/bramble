@@ -5,7 +5,8 @@ import { useCan } from "../../../../context/PlatformContext";
 import { usePrefs } from "../../../../hooks/usePrefs";
 import { useVault } from "../../../../hooks/useVault";
 import { effectiveAllowPasscode } from "../../../../vault/biometric-unlock";
-import { Row, Toggle } from "./primitives";
+import { Toggle } from "../../../components/ui/toggle";
+import { Row } from "./primitives";
 
 /** Settings row to enable/disable this device's biometric unlock. Only rendered on
  * platforms that expose a biometric gate (mobile); the extension has no such capability. */

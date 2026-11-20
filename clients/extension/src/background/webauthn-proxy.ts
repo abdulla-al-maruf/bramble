@@ -24,6 +24,7 @@ import {
 	passkeyAttachTarget,
 	planPasskeyPlacement,
 } from "@core/vault/passkey";
+import { isReservedRpId } from "@core/vault/reserved-rp";
 import {
 	authenticationResponseJSON,
 	buildClientData,
@@ -327,6 +328,7 @@ export async function handleCreate(
 	try {
 		const opts = parseCreationOptions(requestDetailsJson);
 		const { rpId } = resolveRpId(caller.origin, opts.rpId);
+		if (isReservedRpId(rpId)) throw new WebAuthnError("NotAllowedError", "reserved relying party");
 		if (!opts.algs.includes(COSE_ES256)) {
 			throw new WebAuthnError("NotSupportedError", "only ES256 (-7) is supported");
 		}
@@ -415,6 +417,7 @@ export async function handleGet(
 	try {
 		const opts = parseRequestOptions(requestDetailsJson);
 		const { rpId } = resolveRpId(caller.origin, opts.rpId);
+		if (isReservedRpId(rpId)) throw new WebAuthnError("NotAllowedError", "reserved relying party");
 		const allowStd = opts.allowCredentialsB64Url.map(base64UrlToBase64);
 
 		// The ceremony enumerates matching passkeys (for the picker) and returns the chosen

@@ -40,7 +40,8 @@ export const STORE_DIR = repo("clients/extension/store");
 // binary. Its own surface rather than part of the Lingui catalogs because this chrome is drawn
 // before any webview exists and outlives every webview on Wayland. See src-tauri/src/i18n.rs.
 export const TAURI_LOCALES_DIR = repo("clients/desktop/src-tauri/locales");
-// iOS String Catalog for the autofill extension UI.
-export const XCSTRINGS = repo(
-	"clients/mobile/ios/App/AutoFillProbe/Localizable.xcstrings",
-);
+// String Catalogs for the AutoFill extensions' UI: iOS, then macOS.
+export const XCSTRINGS = [
+	repo("clients/mobile/ios/App/AutoFillProbe/Localizable.xcstrings"),
+	repo("clients/desktop/macos/BrambleAutoFill/Localizable.xcstrings"),
+];

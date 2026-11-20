@@ -123,6 +123,30 @@ describe("createEntryMutations", () => {
 		expect(h.writes()).toBe(1);
 	});
 
+	it("marks an unlock-key entry localOnly on its envelope, and nothing else", async () => {
+		const h = harness();
+		const unlockKey = {
+			type: "unlock-key",
+			name: "bramble.sh",
+			passkey: {
+				credentialId: "Y2lk",
+				rpId: "bramble.sh",
+				userHandle: "dWg=",
+				alg: -7,
+				publicKeyCose: "pk",
+				privateKey: "sk",
+				signCount: 0,
+				createdAt: 0,
+			},
+		} as EntryData;
+		const withKey = await h.mutations.add(empty(), unlockKey);
+		await h.mutations.add(withKey, login("a"));
+		const { entries } = await h.mutations.readEntriesPayload();
+		const flags = entries.map((e) => e.localOnly);
+		expect(flags.filter((f) => f === true)).toHaveLength(1);
+		expect(flags.filter((f) => f === undefined)).toHaveLength(1);
+	});
+
 	it("import is a single disk write regardless of count", async () => {
 		const h = harness();
 		const next = await h.mutations.importMany(empty(), [login("a"), login("b"), login("c")]);

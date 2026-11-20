@@ -22,10 +22,16 @@ const LOGIN = `<!doctype html><html><head><title>Sign in</title></head>
 	<button type="submit">Sign in</button>
 </form></body></html>`;
 
+const OTP = `<!doctype html><html><head><title>Two-step</title></head>
+<body><form action="/verify">
+	<input id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" />
+	<button type="submit">Verify</button>
+</form></body></html>`;
+
 test.beforeAll(async () => {
-	server = createServer((_req, res) => {
+	server = createServer((req, res) => {
 		res.writeHead(200, { "content-type": "text/html" });
-		res.end(LOGIN);
+		res.end(req.url?.startsWith("/otp") ? OTP : LOGIN);
 	});
 	await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
 	port = (server.address() as AddressInfo).port;
@@ -136,4 +142,68 @@ test("the dropdown's New login row opens the create form for the site", async ({
 	await expect(form.getByRole("heading", { name: "New Login" })).toBeVisible();
 	await expect(form.getByLabel("Website URL", { exact: true })).toHaveValue(site());
 	await expect(form.getByLabel("Name", { exact: true })).toHaveValue("launch.test");
+});
+
+test("on a 2FA field the shortcut fills the site's code", async ({ context, extensionId }) => {
+	await createVault(await context.newPage(), extensionId);
+	const popup = await context.newPage();
+	await openPopup(popup, extensionId);
+	await popup.getByRole("button", { name: /Add New/i }).click();
+	await popup.getByRole("button", { name: /Add a new login/i }).click();
+	await popup.getByLabel("Name", { exact: true }).fill("With 2FA");
+	await popup.getByRole("button", { name: /Add URL/i }).click();
+	await popup.getByLabel("Website URL", { exact: true }).fill(`${site()}/`);
+	await popup.getByLabel("Username or email", { exact: true }).fill("alice@example.com");
+	await popup.getByLabel("Password", { exact: true }).fill("s3cr3t-pw-01");
+	await popup.getByLabel("Authenticator key (TOTP)", { exact: true }).fill("JBSWY3DPEHPK3PXP");
+	await popup.getByRole("button", { name: /Save Login/i }).click();
+	await expect(popup.getByText("With 2FA")).toBeVisible();
+
+	const page = await context.newPage();
+	await page.goto(`${site()}/otp`);
+	await page.bringToFront();
+	await page.locator("#code").focus();
+	await pressShortcut(context);
+	await expect(page.locator("#code")).toHaveValue(/^\d{6}$/);
+});
+
+/** Bramble's pop-out window over `page`, opened as the background opens it. A popup opened as a
+ * tab would itself be the window's active tab, the page Bramble matches its list to. */
+async function popOut(context: BrowserContext, extensionId: string, page: Page): Promise<Page> {
+	await page.bringToFront();
+	const sw = await backgroundWorker(context);
+	const [pop] = await Promise.all([
+		context.waitForEvent("page", (p) => p.url().includes("detached=1")),
+		sw.evaluate(async (id) => {
+			await chrome.windows.create({
+				url: `chrome-extension://${id}/popup.html?detached=1`,
+				type: "popup",
+				focused: true,
+				width: 500,
+				height: 600,
+			});
+		}, extensionId),
+	]);
+	await expect(pop.getByText("Example Login")).toBeVisible();
+	return pop;
+}
+
+test("Fill in Bramble's window fills the page behind it", async ({ context, extensionId }) => {
+	await vaultWithLogin(context, extensionId);
+	const page = await openSite(context);
+	const pop = await popOut(context, extensionId, page);
+	await pop.getByText("Example Login").hover();
+	await pop.getByRole("button", { name: "Fill", exact: true }).click();
+	await expect(page.locator("#pass")).toHaveValue("s3cr3t-pw-01");
+	await expect(page.locator("#user")).toHaveValue("alice@example.com");
+});
+
+test("Fill is offered only on the page's own logins", async ({ context, extensionId }) => {
+	await vaultWithLogin(context, extensionId);
+	const page = await context.newPage();
+	await page.goto(`http://127.0.0.1:${port}/`);
+	const pop = await popOut(context, extensionId, page);
+	await pop.getByText("Example Login").hover();
+	await expect(pop.getByRole("button", { name: "Copy", exact: true })).toBeVisible();
+	await expect(pop.getByRole("button", { name: "Fill", exact: true })).toHaveCount(0);
 });

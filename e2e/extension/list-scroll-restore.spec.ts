@@ -1,6 +1,7 @@
 import type { BrowserContext, Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import {
+	autoLock,
 	createVault,
 	expectUnlocked,
 	lock,
@@ -260,25 +261,38 @@ test("unlocking keeps the search and its scroll", async ({ context, extensionId 
 	await popup.waitForTimeout(300);
 	const rows = await visibleRows(popup);
 
-	await lock(popup);
+	await autoLock(context, popup);
 	await unlock(popup);
 
 	await expect(search).toHaveValue("Entry 1");
 	await expect.poll(() => topRow(popup)).toBe(rows[0]);
 });
 
-test("unlocking returns to the Settings tab", async ({ context, extensionId }) => {
+test("an auto-lock returns to the Settings tab", async ({ context, extensionId }) => {
 	test.setTimeout(120_000);
 	const popup = await popupWithLongList(context, extensionId);
 	await popup.getByRole("button", { name: "Settings", exact: true }).click();
 	const tabs = popup.getByRole("navigation", { name: "Settings sections" });
 	await tabs.getByRole("button", { name: "Sync" }).click();
 
-	await lock(popup);
+	await autoLock(context, popup);
 	await unlock(popup);
 
 	await expect(tabs).toBeVisible();
 	await expect(tabs.getByRole("button", { name: "Sync" })).toHaveAttribute("aria-current", "true");
+});
+
+test("unlocking after the Lock button opens the list", async ({ context, extensionId }) => {
+	test.setTimeout(120_000);
+	const popup = await popupWithLongList(context, extensionId);
+	await popup.getByRole("button", { name: "Settings", exact: true }).click();
+	await expect(popup.getByRole("navigation", { name: "Settings sections" })).toBeVisible();
+
+	await lock(popup);
+	await unlock(popup);
+
+	await expect(popup.getByRole("navigation", { name: "Settings sections" })).toHaveCount(0);
+	await expect(list(popup)).toBeVisible();
 });
 
 // The order lives in the list's address, which a reopened popup or the home button starts

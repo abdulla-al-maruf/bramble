@@ -164,6 +164,7 @@ export function VaultSearchBar({
 		() => [
 			{ value: "name-asc", label: t`Name A-Z` },
 			{ value: "name-desc", label: t`Name Z-A` },
+			{ value: "recent-activity", label: t`Recent activity` },
 			{ value: "recent-used", label: t`Recently used` },
 			{ value: "recent-added", label: t`Recently added` },
 			{ value: "recent-updated", label: t`Recently updated` },

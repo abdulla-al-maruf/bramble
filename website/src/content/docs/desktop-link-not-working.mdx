@@ -30,8 +30,16 @@ keywords:
   - Flatpak
   - Snap
   - Zen
+  - Floorp
+  - Brave
+  - flatpak override
   - xdg-native-messaging-proxy
-updatedDate: 2026-11-12
+  - The desktop app didn't answer
+  - stuck linking
+  - symbols don't appear
+  - Brave Flatpak
+  - Chromium Flatpak
+updatedDate: 2026-11-19
 ---
 
 ## Check these first
@@ -42,11 +50,28 @@ updatedDate: 2026-11-12
 
 ## Flatpak or Snap browsers on Linux
 
-Firefox, Zen and other Firefox-based browsers installed as a Flatpak or Snap reach the desktop app through your system's native messaging proxy.
+### Firefox, Zen and Floorp
+
+Firefox and Firefox-based browsers installed as a Flatpak or Snap reach the desktop app through your system's native messaging proxy. This needs Firefox 157 or later.
 
 1. Install `xdg-native-messaging-proxy` from your distribution.
 2. In the browser, open `about:config` and set `widget.use-xdg-desktop-portal.native-messaging-proxy` to `2`.
-3. Restart the browser, then quit and reopen the desktop app.
+3. For a Flatpak, let the browser reach the proxy. Run the line for your browser in a terminal:
+   - Firefox: `flatpak override --user --talk-name=org.freedesktop.NativeMessagingProxy org.mozilla.firefox`
+   - Zen: `flatpak override --user --talk-name=org.freedesktop.NativeMessagingProxy app.zen_browser.zen`
+   - Floorp: `flatpak override --user --talk-name=org.freedesktop.NativeMessagingProxy one.ablaze.floorp`
+4. Restart the browser, then quit and reopen the desktop app.
+
+### Chrome, Brave and other Chromium-based browsers
+
+A Chromium-based browser installed as a Flatpak can't link to the desktop app. Linking stalls where the symbols should appear.
+
+To reach the desktop app, the browser has to start a small Bramble helper outside its sandbox. Firefox does this through the native messaging proxy above, but Chromium-based browsers don't support it. The only other way gives the browser permission to run any program on your computer, which undoes the protection a Flatpak gives you, so Bramble doesn't ask for it.
+
+Use one of these instead:
+
+- Install the browser from your distribution's packages or the browser maker's own repository, then link it.
+- [Add the browser as a sync device](/docs/add-a-device). Your vault stays end-to-end encrypted, but it syncs over the internet instead of only on your computer, and you unlock the browser separately.
 
 ## Messages in the extension
 
@@ -55,6 +80,7 @@ Firefox, Zen and other Firefox-based browsers installed as a Flatpak or Snap rea
 | Open Connect a browser in the desktop app, then try again. | In the desktop app, open **Settings → Sync** and choose **Connect**, then press **Link** again. |
 | This browser cannot reach the desktop app yet. | Quit and reopen the desktop app, then try again. |
 | Could not reach the desktop app. | Make sure the desktop app is installed and open, then try again. |
+| The desktop app didn't answer. Check that it's open, then try again. | Make sure the desktop app is open and showing **Connect a browser**. On Linux, a browser installed as a Flatpak may not be able to reach it. See [Flatpak or Snap browsers](#flatpak-or-snap-browsers-on-linux). |
 | Bramble needs that permission to talk to the desktop app. | Choose **Allow and continue** and accept the browser's prompt. |
 | Permission needed | The browser's permission was turned off. Choose **Allow again**. |
 | The symbols did not match, so nothing was linked. | Start again from **Connect a browser** in the desktop app. |

@@ -13,6 +13,7 @@ type VaultSlice = {
 	ready: boolean;
 	entries: Entry[];
 	unlockedWithRecoveryCode?: boolean;
+	lockedByUser?: boolean;
 };
 type RegistrySlice = { ready: boolean; count: number; hasActive: boolean; activeId?: string };
 
@@ -116,6 +117,7 @@ describe("unlock returns to the interrupted screen", () => {
 		path: string,
 		unlocked: VaultSlice = open,
 		vaults: { locked?: RegistrySlice; unlocked?: RegistrySlice } = {},
+		lockedByUser = false,
 	) {
 		const router = await load(path, open, vaults.locked);
 		const set = async (vault: VaultSlice, registry?: RegistrySlice) => {
@@ -124,7 +126,7 @@ describe("unlock returns to the interrupted screen", () => {
 			});
 			await router.invalidate();
 		};
-		await set({ ...open, isLocked: true }, vaults.locked);
+		await set({ ...open, isLocked: true, lockedByUser }, vaults.locked);
 		const locked = router.state.location.pathname;
 		await set(unlocked, vaults.unlocked ?? vaults.locked);
 		return { router, locked };
@@ -135,6 +137,14 @@ describe("unlock returns to the interrupted screen", () => {
 		expect(locked).toBe("/");
 		expect(router.state.location.pathname).toBe("/settings");
 		expect(router.state.location.search).toMatchObject({ tab: "sync" });
+	});
+
+	// Pressing Lock means done with that screen; an auto-lock is an interruption.
+	it("opens the list after the user's own lock, not the screen they left", async () => {
+		const { router, locked } = await lockThenUnlock("/settings?tab=sync", open, {}, true);
+		expect(locked).toBe("/");
+		expect(router.state.location.search).not.toHaveProperty("redirect");
+		expect(router.state.location.pathname).toBe("/vault");
 	});
 
 	it("returns there when the same vault unlocks", async () => {

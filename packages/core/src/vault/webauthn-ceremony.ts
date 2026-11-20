@@ -4,6 +4,7 @@
 
 import { bytesToBase64Url } from "../util/bytes";
 import { LEN_HMAC_SECRET_SALT } from "../vault-format";
+import { isHeldByBramble } from "./slot-policy";
 
 /** True where the platform can do WebAuthn at all (false in mobile webviews, etc.). */
 export function isWebauthnAvailable(): boolean {
@@ -167,10 +168,18 @@ function noPrfError(kind: WebauthnKeyKind): Error {
 const UNLOCK_FAILED =
 	"No key was used to unlock. If you dismissed the prompt, try again. Keys are registered per browser, so one added in a different browser won't work here - add a key in this browser, or use your master password.";
 
+// A key Bramble Desktop holds also fails this way once it is removed there.
+const UNLOCK_FAILED_HELD =
+	"No key was used to unlock. If you dismissed the prompt, try again. If you removed this browser's key in Bramble Desktop, remove it here too, under Tap to unlock, after unlocking with your master password.";
+
 /** A credential get() may answer with; its own `salt`, when known, overrides the shared one. */
 export interface PrfAllow {
 	credentialId: Uint8Array;
 	salt?: Uint8Array;
+}
+
+function unlockFailed(allow: PrfAllow[]): string {
+	return allow.some((a) => isHeldByBramble(a.credentialId)) ? UNLOCK_FAILED_HELD : UNLOCK_FAILED;
 }
 
 /**
@@ -220,12 +229,12 @@ export async function getPrfSecret(
 		// Only on the unlock path: during registration the credential was just created, so a
 		// refusal there means something else and should surface as itself.
 		if (opts.forUnlock && (e as { name?: string })?.name === "NotAllowedError") {
-			throw new Error(UNLOCK_FAILED);
+			throw new Error(unlockFailed(allow));
 		}
 		throw e;
 	}
 	if (!credential)
-		throw new Error(opts.forUnlock ? UNLOCK_FAILED : "Authenticator returned no credential.");
+		throw new Error(opts.forUnlock ? unlockFailed(allow) : "Authenticator returned no credential.");
 	const ext = credential.getClientExtensionResults() as {
 		prf?: { results?: { first?: ArrayBuffer } };
 	};
@@ -292,7 +301,12 @@ export async function createPrfCredential(
 				publicKey: {
 					challenge: challenge as BufferSource,
 					rp: rpId ? { name: "Vault", id: rpId } : { name: "Vault" },
-					user: { id: userId as BufferSource, name: "vault@local", displayName: label || "Vault" },
+					// The name is what the passkey sheet and Bramble Desktop show for this key.
+					user: {
+						id: userId as BufferSource,
+						name: label || "Vault",
+						displayName: label || "Vault",
+					},
 					pubKeyCredParams: [
 						{ type: "public-key", alg: -7 }, // ES256
 						{ type: "public-key", alg: -257 }, // RS256

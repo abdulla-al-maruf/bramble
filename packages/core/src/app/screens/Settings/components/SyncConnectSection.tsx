@@ -27,7 +27,7 @@ import { PasswordField } from "../../../components/ui/password-field";
 import { TextField } from "../../../components/ui/text-field";
 import { useDeviceNames } from "../../../hooks/useDeviceNames";
 import { Row, Section } from "./primitives";
-import { deviceNamer, fullStamp, shortStamp } from "./sync-log";
+import { deviceNamer, fullStamp, shortKey, shortStamp } from "./sync-log";
 
 const inputClass =
 	"w-full px-3 py-1.5 text-xs font-mono rounded-lg border border-input-border bg-transparent focus:outline-none focus:border-primary";
@@ -44,7 +44,6 @@ interface LogLine {
 }
 const logLine = (text: string): LogLine => ({ at: Date.now(), text });
 
-const fingerprint = (publicKey: string): string => publicKey.replace(/[^a-z0-9]/gi, "").slice(0, 6);
 const addedOn = (ms: number): string => formatDate(ms);
 
 /** m:ss for the invite countdown. */
@@ -555,7 +554,7 @@ export function SyncConnectSection() {
 									)}
 									<div className="text-xs text-muted-foreground font-mono">
 										<Trans>
-											{fingerprint(d.publicKey)} · added {addedOn(d.addedAt)}
+											{shortKey(d.publicKey)} · added {addedOn(d.addedAt)}
 										</Trans>
 									</div>
 								</div>

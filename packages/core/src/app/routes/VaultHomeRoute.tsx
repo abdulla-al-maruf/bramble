@@ -1,4 +1,4 @@
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import {
 	useElementScrollRestoration,
 	useLocation,
@@ -16,6 +16,7 @@ import { allTags } from "../../vault/tags";
 import { DefaultManagerCard } from "../components/DefaultManagerCard";
 import { ReviewNudgeCard } from "../components/ReviewNudgeCard";
 import { UpdateCard } from "../components/UpdateCard";
+import { useToast } from "../components/ui/toast";
 import { useAppUpdate } from "../hooks/useAppUpdate";
 import { useDefaultPasswordManager } from "../hooks/useDefaultPasswordManager";
 import { useReviewNudge } from "../hooks/useReviewNudge";
@@ -59,6 +60,8 @@ export function VaultHomeRoute() {
 	const locking = useRef(false);
 	locking.current = isLocked;
 	const { shell } = usePlatform();
+	const { show } = useToast();
+	const { t } = useLingui();
 	// Hide stored breach flags when breach checking is off.
 	const showBreaches = prefs.breachCheckEnabled;
 
@@ -135,6 +138,15 @@ export function VaultHomeRoute() {
 		[navigate],
 	);
 	const onUseEntry = useCallback((entryId: string) => void touchEntry(entryId), [touchEntry]);
+	const onFillEntry = useMemo(() => {
+		if (!shell.fillLogin) return undefined;
+		return (entryId: string) => {
+			void touchEntry(entryId);
+			void shell.fillLogin?.(entryId).then((filled) => {
+				if (!filled) show({ message: t`No login form on this page`, variant: "error" });
+			});
+		};
+	}, [shell, touchEntry, show, t]);
 
 	// Until the vault has finished decrypting, `entries` is []; showing VaultHome
 	// here would flash "Your vault is empty" on a large vault. Show a loader instead.
@@ -165,6 +177,7 @@ export function VaultHomeRoute() {
 			onDeleteEntry={deleteEntry}
 			entries={entries}
 			onUseEntry={onUseEntry}
+			onFillEntry={onFillEntry}
 			tags={tags}
 			statsCollapsed={prefs.statsCollapsed}
 			onToggleStats={() => void update("statsCollapsed", !prefs.statsCollapsed)}

@@ -11,7 +11,8 @@
 #   bindings   Generate Swift + Kotlin sources only (host build; no device toolchain).
 #   ios        + cross-compile the iOS XCFramework (needs Xcode + rustup iOS targets).
 #   android    + cross-compile the Android jniLibs (needs the NDK + cargo-ndk).
-#   all        bindings + ios + android.
+#   macos      slim Swift glue + a universal staticlib for the macOS AutoFill extension.
+#   all        bindings + ios + android + macos.
 #
 # Outputs go to clients/mobile/native-build/ (gitignored, regenerable).
 # Wiring these into the Xcode/Gradle projects is the next step (not done here).
@@ -37,6 +38,7 @@ ffi_ios="--no-default-features --features ffi,webrtc"
 ios_ffi="$mobile/ios/App/VaultCryptoFFI"
 and_jni="$mobile/android/app/src/main/jniLibs"
 and_kt="$mobile/android/app/src/main/java/uniffi/vault_crypto"
+mac_ffi="$here/clients/desktop/macos/ffi"
 
 mkdir -p "$out/swift" "$out/swift-autofill" "$out/kotlin" "$out/ios" "$out/android"
 
@@ -111,6 +113,26 @@ build_ios() {
   echo "==> installed XCFramework + Swift glue (full + autofill-slim) to $ios_ffi"
 }
 
+# --- macos: universal staticlib + the slim (no webrtc) Swift glue, for the AutoFill appex ---
+build_macos() {
+  local arm="aarch64-apple-darwin"
+  local x86="x86_64-apple-darwin"
+  rustup target add "$arm" "$x86"
+  for t in "$arm" "$x86"; do
+    echo "==> cargo build --release ($t)"
+    ( cd "$crate" && cargo build --locked --release $ffi --lib --target "$t" )
+  done
+  mkdir -p "$mac_ffi/headers"
+  lipo -create \
+    "$crate/target/$arm/release/lib${lib_name}.a" \
+    "$crate/target/$x86/release/lib${lib_name}.a" \
+    -output "$mac_ffi/lib${lib_name}.a"
+  cp "$out/swift-autofill/${lib_name}FFI.h" "$mac_ffi/headers/"
+  cp "$out/swift-autofill/${lib_name}FFI.modulemap" "$mac_ffi/headers/module.modulemap"
+  cp "$out/swift-autofill/${lib_name}.swift" "$mac_ffi/${lib_name}.swift"
+  echo "==> installed universal staticlib + Swift glue to $mac_ffi"
+}
+
 # --- android: jniLibs per ABI via cargo-ndk ---
 build_android() {
   command -v cargo-ndk >/dev/null || { echo "error: cargo-ndk not found (cargo install cargo-ndk)"; exit 1; }
@@ -140,6 +162,7 @@ case "$cmd" in
   bindings) gen_bindings ;;
   ios)      gen_bindings; build_ios ;;
   android)  gen_bindings; build_android ;;
-  all)      gen_bindings; build_ios; build_android ;;
-  *) echo "usage: $0 {bindings|ios|android|all}"; exit 1 ;;
+  macos)    gen_lang swift "$ffi" "$out/swift-autofill"; build_macos ;;
+  all)      gen_bindings; build_ios; build_android; build_macos ;;
+  *) echo "usage: $0 {bindings|ios|android|macos|all}"; exit 1 ;;
 esac

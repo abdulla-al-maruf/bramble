@@ -18,6 +18,28 @@ export function toggleSelected(selected: Selection, id: string): Selection {
 	return next;
 }
 
+/**
+ * Shift-click: give every row from `anchor` to `id`, in list order, the state the click
+ * gives `id`. A plain toggle when the anchor isn't in `items` (filtered out, or gone).
+ */
+export function selectRange(
+	selected: Selection,
+	items: readonly SelectableEntry[],
+	anchor: string,
+	id: string,
+): Selection {
+	const from = items.findIndex((item) => item.id === anchor);
+	const to = items.findIndex((item) => item.id === id);
+	if (from < 0 || to < 0) return toggleSelected(selected, id);
+	const select = !selected.has(id);
+	const next = new Set(selected);
+	for (const item of items.slice(Math.min(from, to), Math.max(from, to) + 1)) {
+		if (select) next.add(item.id);
+		else next.delete(item.id);
+	}
+	return next;
+}
+
 /** Select every id in `items` on top of the current selection. */
 export function selectAll(selected: Selection, items: readonly SelectableEntry[]): Selection {
 	if (items.every((item) => selected.has(item.id))) return selected;

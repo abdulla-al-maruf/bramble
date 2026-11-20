@@ -6,6 +6,9 @@ import { extensionClipboard } from "./clipboard";
 import { extensionCrypto } from "./crypto";
 import { extensionDesktopLink, lendPipeToWorker } from "./desktop-link";
 import { extensionFiles } from "./files";
+import { followNormalWindowFocus } from "./normal-window";
+import { api } from "./platform-api";
+import { watchPopoutBounds } from "./popout-bounds";
 import { extensionShell, extensionTarget } from "./shell";
 import { extensionStorage } from "./storage";
 import { connectViewPort } from "./view-port";
@@ -44,6 +47,12 @@ async function boot() {
 		document.body.style.height = "100%";
 		document.body.style.width = "100%";
 		document.body.style.overflow = "auto";
+		followNormalWindowFocus();
+		if (extensionTarget === "firefox") {
+			watchPopoutBounds(window, () => {
+				void api.runtime.sendMessage({ type: "POPOUT_BOUNDS_SETTLED" }).catch(() => {});
+			});
+		}
 
 		// Resume on the route the originating popup was showing, with any
 		// half-filled form restored. consumeHandoff is a one-shot read.

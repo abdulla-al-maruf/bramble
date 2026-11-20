@@ -72,7 +72,7 @@ function Root() {
 	// back to "app" on completion/close.
 	const [view, setView] = useState<"app" | "setup" | "import" | "restore">("app");
 	const [pendingLogin, setPendingLogin] = useState<PendingLogin | null>(null);
-	const [pendingTotp, setPendingTotp] = useState<string | null>(null);
+	const [pendingTotp, setPendingTotp] = useState<{ uri: string } | null>(null);
 	// The back-button listener is registered once; read the current view through a ref.
 	const viewRef = useRef(view);
 	viewRef.current = view;
@@ -132,7 +132,7 @@ function Root() {
 	// A 2FA key handed over by another app or the OS. Held here until App can route it,
 	// which is after the vault unlocks: with the default "Immediately" auto-lock, being
 	// launched from another app means arriving locked almost every time.
-	useEffect(() => onTotpHandoff(setPendingTotp), []);
+	useEffect(() => onTotpHandoff((uri) => setPendingTotp({ uri })), []);
 
 	// Auto-lock after the configured inactivity timeout (background time counts as
 	// inactivity); honors the "Never" setting. onExternalLock then re-locks the UI.

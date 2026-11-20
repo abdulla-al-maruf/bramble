@@ -685,6 +685,7 @@ function selectMatch(
 	isAuto: boolean,
 	otpOnly = false,
 	into: HTMLInputElement | null = anchorField(),
+	pageIsLive: () => boolean = documentIsActive,
 ): void {
 	const target = into;
 	const targetKind = target ? currentTargetKind(target) : null;
@@ -705,7 +706,7 @@ function selectMatch(
 	void safeRequest<AutofillSelectResponse>({
 		type: "AUTOFILL_SELECT",
 		payload: { entryId, isAuto, otpOnly },
-	}).then((response) => applySelectResponse(intent, response));
+	}).then((response) => applySelectResponse(intent, response, pageIsLive));
 }
 
 /** The password field a launch may fill: rendered, empty, and not on a form setting a password. */
@@ -802,32 +803,65 @@ function shortcutPick(logins: MatchSummary[], typed: string): MatchSummary | und
 	return logins[0];
 }
 
+/** The login field a fill goes into: the focused one, else the form's username, else its password. */
+function loginTarget(): HTMLInputElement | undefined {
+	invalidatePageFields();
+	const fields = getPageFields().login;
+	return [focusedCandidate(), fields.username, fields.password].find(
+		(field): field is HTMLInputElement =>
+			!!field && isRendered(field) && currentTargetKind(field) === "login",
+	);
+}
+
+/** This page's logins, or the ones with a 2FA key, asked fresh: with "Autofill on web pages" off
+ * this frame holds nothing, and the background answers only inside a one-fill grant. */
+async function freshMatches(otp: boolean): Promise<MatchSummary[] | null> {
+	const response = await safeRequest<AutofillQueryResponse>({
+		type: "AUTOFILL_QUERY",
+		hasLogin: !otp,
+		hasCard: false,
+		hasOtp: otp,
+	});
+	if (!response?.ok || !isQueryResult(response.data)) return null;
+	const { logins, otps, locked, disabled } = response.data;
+	if (locked || disabled) return null;
+	return otp ? (otps ?? []) : logins;
+}
+
 /**
- * The fill shortcut (#215): fill this page's login, the one `shortcutPick` chooses. Every frame of
- * the tab gets it; only the one holding focus answers. Asked fresh rather than from the cache: with
- * "Autofill on web pages" off this frame holds nothing, and the background answers only because the
- * shortcut was just pressed in this tab (fill-shortcut.ts).
+ * The fill shortcut (#215): fill this page's login, the one `shortcutPick` chooses, or on a 2FA
+ * field the code of the site's first login that has one. Every frame of the tab gets it; only the
+ * one holding focus answers. The background answers its query only because the shortcut was just
+ * pressed in this tab (fill-shortcut.ts).
  */
 async function fillFromShortcut(): Promise<void> {
 	if (!document.hasFocus() || deepActiveElement() instanceof HTMLIFrameElement) return;
 	invalidatePageFields();
-	const fields = getPageFields().login;
-	const into = [focusedCandidate(), fields.username, fields.password].find(
-		(field): field is HTMLInputElement =>
-			!!field && isRendered(field) && currentTargetKind(field) === "login",
-	);
+	const focused = focusedCandidate();
+	if (focused && currentTargetKind(focused) === "otp") {
+		const [first] = (await freshMatches(true)) ?? [];
+		if (first) selectMatch(first.id, false, true, focused);
+		return;
+	}
+	const into = loginTarget();
 	if (!into) return;
-	const response = await safeRequest<AutofillQueryResponse>({
-		type: "AUTOFILL_QUERY",
-		hasLogin: true,
-		hasCard: false,
-		hasOtp: false,
-	});
-	if (!response?.ok || !isQueryResult(response.data)) return;
-	const { logins, locked, disabled } = response.data;
-	if (locked || disabled) return;
-	const pick = shortcutPick(logins, fields.username?.value ?? "");
+	const logins = await freshMatches(false);
+	const pick = logins && shortcutPick(logins, getPageFields().login.username?.value ?? "");
 	if (pick) selectMatch(pick.id, false, false, into);
+}
+
+/**
+ * Fill the login the user chose in Bramble's own window for this page (#215). Top frame only, like
+ * a desktop fill. The page has no focus while that window is in front, so a visible page will do,
+ * as for a launch. False when there is no login form here, or the login isn't one of this page's.
+ */
+async function fillChosenLogin(entryId: string): Promise<boolean> {
+	const into = loginTarget();
+	if (!into) return false;
+	const logins = await freshMatches(false);
+	if (!logins?.some((login) => login.id === entryId)) return false;
+	selectMatch(entryId, false, false, into, documentIsVisible);
+	return true;
 }
 
 function focusedCandidate(): HTMLInputElement | null {
@@ -1303,6 +1337,13 @@ api.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 		void fillFromShortcut();
 		sendResponse({ ok: true });
 		return false;
+	}
+
+	if (message?.type === "AUTOFILL_FILL_ENTRY") {
+		const entryId = (message.payload as { entryId?: unknown } | undefined)?.entryId;
+		if (window !== window.top || typeof entryId !== "string") return false;
+		void fillChosenLogin(entryId).then((ok) => sendResponse({ ok }));
+		return true;
 	}
 
 	if (message?.type === "AUTOFILL_LAUNCH_TOP_CHECK") {

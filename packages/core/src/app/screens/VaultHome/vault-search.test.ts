@@ -186,6 +186,18 @@ describe("filterAndSortEntries", () => {
 		);
 	});
 
+	it("sorts by the latest of used, added and updated (#242)", () => {
+		const items = [
+			item({ name: "Added", createdAt: 500 }),
+			item({ name: "Used", createdAt: 100, lastUsedAt: 900 }),
+			item({ name: "Edited", createdAt: 100, updatedAt: 700 }),
+			item({ name: "Untouched" }),
+		];
+		expect(
+			filterAndSortEntries(items, search({ sort: "recent-activity" })).map((i) => i.name),
+		).toEqual(["Used", "Edited", "Added", "Untouched"]);
+	});
+
 	it("does not mutate the input array", () => {
 		const items = [item({ name: "B" }), item({ name: "A" })];
 		const before = items.map((i) => i.name);
